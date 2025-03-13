@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { login as authLogin, register as authRegister, logout as authLogout, getCurrentUser, logError } from '../services/auth.service';
 
 // Création du contexte
 const AuthContext = createContext();
@@ -29,30 +29,20 @@ export const AuthProvider = ({ children }) => {
   // Récupérer les données de l'utilisateur
   const fetchUserData = async (token) => {
     try {
-      // Configuration de l'en-tête avec le token
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      };
-
-      // Appel à l'API pour récupérer les données de l'utilisateur
-      // Dans une implémentation réelle, remplacez l'URL par celle de votre API
-      // const response = await axios.get('http://localhost:3001/api/users/me', config);
+      // Utiliser le service d'authentification pour récupérer les données de l'utilisateur
+      const user = await getCurrentUser();
       
-      // Pour le moment, simulons une réponse
-      const mockUser = {
-        id: '1',
-        name: 'Utilisateur Test',
-        email: 'test@example.com',
-        role: 'user'
-      };
-      
-      setCurrentUser(mockUser);
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        // Si aucun utilisateur n'est retourné, supprimer le token
+        localStorage.removeItem('token');
+        setError('Session expirée. Veuillez vous reconnecter.');
+      }
     } catch (err) {
-      console.error('Erreur lors de la récupération des données utilisateur:', err);
+      logError('Erreur lors de la récupération des données utilisateur:', err);
       localStorage.removeItem('token');
-      setError('Session expirée. Veuillez vous reconnecter.');
+      setError(err.message || 'Session expirée. Veuillez vous reconnecter.');
     } finally {
       setLoading(false);
     }
@@ -64,21 +54,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Dans une implémentation réelle, remplacez l'URL par celle de votre API
-      // const response = await axios.post('http://localhost:3001/api/auth/login', { email, password });
-      // const { token, user } = response.data;
-      
-      // Pour le moment, simulons une réponse
-      const token = 'fake-jwt-token';
-      const user = {
-        id: '1',
-        name: 'Utilisateur Test',
-        email: email,
-        role: 'user'
-      };
-      
-      // Stocker le token dans le localStorage
-      localStorage.setItem('token', token);
+      // Utiliser le service d'authentification pour se connecter
+      const user = await authLogin(email, password);
       
       // Mettre à jour l'état de l'utilisateur
       setCurrentUser(user);
@@ -88,8 +65,8 @@ export const AuthProvider = ({ children }) => {
       
       return true;
     } catch (err) {
-      console.error('Erreur de connexion:', err);
-      setError(err.response?.data?.message || 'Erreur de connexion. Veuillez réessayer.');
+      logError('Erreur de connexion:', err);
+      setError(err.message || 'Erreur de connexion. Veuillez réessayer.');
       return false;
     } finally {
       setLoading(false);
@@ -102,21 +79,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Dans une implémentation réelle, remplacez l'URL par celle de votre API
-      // const response = await axios.post('http://localhost:3001/api/auth/register', { name, email, password });
-      // const { token, user } = response.data;
-      
-      // Pour le moment, simulons une réponse
-      const token = 'fake-jwt-token';
-      const user = {
-        id: '1',
-        name: name,
-        email: email,
-        role: 'user'
-      };
-      
-      // Stocker le token dans le localStorage
-      localStorage.setItem('token', token);
+      // Utiliser le service d'authentification pour s'inscrire
+      const user = await authRegister(name, email, password);
       
       // Mettre à jour l'état de l'utilisateur
       setCurrentUser(user);
@@ -126,8 +90,8 @@ export const AuthProvider = ({ children }) => {
       
       return true;
     } catch (err) {
-      console.error('Erreur d\'inscription:', err);
-      setError(err.response?.data?.message || 'Erreur d\'inscription. Veuillez réessayer.');
+      logError('Erreur d\'inscription:', err);
+      setError(err.message || 'Erreur d\'inscription. Veuillez réessayer.');
       return false;
     } finally {
       setLoading(false);
@@ -135,10 +99,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Fonction de déconnexion
-  const logout = () => {
-    localStorage.removeItem('token');
-    setCurrentUser(null);
-    navigate('/');
+  const logout = async () => {
+    try {
+      // Utiliser le service d'authentification pour se déconnecter
+      await authLogout();
+      
+      // Mettre à jour l'état de l'utilisateur
+      setCurrentUser(null);
+      
+      // Rediriger vers la page d'accueil
+      navigate('/');
+    } catch (err) {
+      logError('Erreur lors de la déconnexion:', err);
+    }
   };
 
   // Valeur du contexte
