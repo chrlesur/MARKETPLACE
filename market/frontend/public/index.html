@@ -9,23 +9,7 @@
       name="description"
       content="Marketplace Web - Découvrez des applications web innovantes"
     />
-    <!-- Balise meta CSP pour le navigateur -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval';
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' data: https://via.placeholder.com https://*.cloudinary.com;
-      connect-src 'self' ws: wss: https://api.quantum-dream.net;
-      frame-src 'self';
-      object-src 'none';
-      base-uri 'self';
-      form-action 'self';
-      frame-ancestors 'self';
-      media-src 'self';
-      worker-src 'self' blob:;
-      manifest-src 'self';
-    " />
+    <!-- La politique CSP est gérée par Nginx -->
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     

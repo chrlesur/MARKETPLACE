@@ -407,16 +407,36 @@ deploy_app() {
   success "Déploiement de l'application $APP_NAME terminé"
 }
 
+# Fonction pour déployer MongoDB
+deploy_mongodb() {
+  info "Déploiement de MongoDB..."
+
+  # Transférer le script d'installation sur le serveur
+  info "Transfert du script d'installation de MongoDB..."
+  scp -P "$PORT" "$PROJECT_ROOT/docs/mongodb/install_mongodb.sh" "$SERVER:~/"
+  check_status "Script d'installation de MongoDB transféré avec succès" "Erreur lors du transfert du script d'installation de MongoDB"
+
+  # Exécuter le script d'installation sur le serveur
+  info "Installation de MongoDB sur le serveur..."
+  ssh -p "$PORT" "$SERVER" "chmod +x ~/install_mongodb.sh && sudo ~/install_mongodb.sh && rm ~/install_mongodb.sh"
+  check_status "MongoDB installé avec succès" "Erreur lors de l'installation de MongoDB"
+
+  success "Déploiement de MongoDB terminé"
+}
+
 # Fonction pour déployer toute la marketplace
 deploy_all() {
   info "Déploiement complet de la marketplace..."
-  
+
+  # Déployer MongoDB
+  deploy_mongodb
+
   # Déployer le frontend
   deploy_frontend
-  
+
   # Déployer le backend
   deploy_backend
-  
+
   # Déployer toutes les applications
   for app in "$APPS_DIR"/*; do
     if [ -d "$app" ]; then
@@ -424,7 +444,7 @@ deploy_all() {
       deploy_app "$APP_NAME"
     fi
   done
-  
+
   success "Déploiement complet de la marketplace terminé"
 }
 
@@ -513,12 +533,12 @@ if [ $# -gt 0 ]; then
       # Déployer uniquement la configuration Nginx
       if [ -d "$PROJECT_ROOT/config/nginx" ]; then
         info "Déploiement de la configuration Nginx..."
-        
+
         # Transférer la configuration Nginx
         info "Transfert de la configuration Nginx..."
         scp -P "$PORT" "$PROJECT_ROOT/config/nginx/marketplace.conf" "$SERVER:~/"
         check_status "Configuration Nginx transférée avec succès" "Erreur lors du transfert de la configuration Nginx"
-        
+
         # Installer la configuration Nginx sur le serveur
         info "Installation de la configuration Nginx sur le serveur..."
         ssh -p "$PORT" "$SERVER" "sudo cp ~/marketplace.conf /etc/nginx/conf.d/market.quantum-dream.net.conf && \
@@ -526,13 +546,14 @@ if [ $# -gt 0 ]; then
                                  sudo systemctl restart nginx && \
                                  rm ~/marketplace.conf"
         check_status "Configuration Nginx installée avec succès" "Erreur lors de l'installation de la configuration Nginx"
-        
+
         success "Déploiement de la configuration Nginx terminé"
       else
         error "Le dossier de configuration Nginx n'existe pas"
         exit 1
       fi
       ;;
+    mongodb) deploy_mongodb ;;
     all) deploy_all ;;
     *)
       error "Argument invalide: $1"

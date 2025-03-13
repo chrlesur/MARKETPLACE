@@ -33,7 +33,7 @@ const baseURL = process.env.NODE_ENV === 'production'
  * Timeout par défaut pour les requêtes (en millisecondes)
  * @constant {number}
  */
-const DEFAULT_TIMEOUT = 10000;
+const DEFAULT_TIMEOUT = 30000; // Augmenté à 30 secondes pour éviter les timeouts
 
 /**
  * Codes d'erreur HTTP qui nécessitent une redirection vers la page de connexion
