@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Button,
@@ -34,58 +35,30 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 
-// Données fictives pour les catégories
-const mockCategories = [
-  { 
-    id: 1, 
-    name: 'Productivité', 
-    slug: 'productivity',
-    description: 'Applications pour améliorer votre productivité et votre organisation.',
-    appsCount: 24
-  },
-  { 
-    id: 2, 
-    name: 'Créativité', 
-    slug: 'creativity',
-    description: 'Outils pour exprimer votre créativité et créer du contenu.',
-    appsCount: 18
-  },
-  { 
-    id: 3, 
-    name: 'Communication', 
-    slug: 'communication',
-    description: 'Applications pour communiquer et collaborer avec d\'autres personnes.',
-    appsCount: 15
-  },
-  { 
-    id: 4, 
-    name: 'Analyse de données', 
-    slug: 'data-analysis',
-    description: 'Outils pour analyser et visualiser des données.',
-    appsCount: 12
-  },
-  { 
-    id: 5, 
-    name: 'Intelligence artificielle', 
-    slug: 'ai',
-    description: 'Applications utilisant l\'intelligence artificielle pour diverses tâches.',
-    appsCount: 9
-  },
-  { 
-    id: 6, 
-    name: 'Développement', 
-    slug: 'development',
-    description: 'Outils pour les développeurs et les programmeurs.',
-    appsCount: 21
-  }
-];
+// Importer le service des catégories
+import { 
+  getCategories, 
+  createCategory, 
+  updateCategory, 
+  deleteCategory 
+} from '../services/categories.service';
 
+/**
+ * Page d'administration des catégories
+ * 
+ * Cette page permet de gérer les catégories de la marketplace :
+ * - Afficher la liste des catégories
+ * - Ajouter, modifier et supprimer des catégories
+ */
 const AdminCategoriesPage = () => {
+  const { currentUser } = useAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   
@@ -99,10 +72,12 @@ const AdminCategoriesPage = () => {
     description: ''
   });
   const [formErrors, setFormErrors] = useState({});
+  const [formLoading, setFormLoading] = useState(false);
   
   // État pour la suppression
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // État pour les notifications
   const [snackbar, setSnackbar] = useState({
@@ -111,25 +86,56 @@ const AdminCategoriesPage = () => {
     severity: 'success'
   });
   
-  useEffect(() => {
-    // Simuler le chargement des données depuis l'API
-    setTimeout(() => {
-      setCategories(mockCategories);
+  /**
+   * Charge les catégories depuis l'API
+   */
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Appel au service des catégories
+      const data = await getCategories();
+      
+      setCategories(data || []);
+    } catch (err) {
+      console.error('Erreur lors du chargement des catégories:', err);
+      setError(err.message || 'Erreur lors du chargement des catégories');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+  
+  // Charger les catégories au chargement du composant
+  useEffect(() => {
+    loadCategories();
   }, []);
   
-  // Pagination
+  /**
+   * Gère le changement de page
+   */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
   
+  /**
+   * Gère le changement du nombre de lignes par page
+   */
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
   
-  // Formulaire
+  /**
+   * Rafraîchit la liste des catégories
+   */
+  const handleRefresh = () => {
+    loadCategories();
+  };
+  
+  /**
+   * Ouvre le formulaire d'ajout ou de modification
+   */
   const handleOpenForm = (mode, category = null) => {
     setFormMode(mode);
     
@@ -153,10 +159,16 @@ const AdminCategoriesPage = () => {
     setFormOpen(true);
   };
   
+  /**
+   * Ferme le formulaire
+   */
   const handleCloseForm = () => {
     setFormOpen(false);
   };
   
+  /**
+   * Gère les changements dans le formulaire
+   */
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     
@@ -174,7 +186,9 @@ const AdminCategoriesPage = () => {
     }
   };
   
-  // Génération automatique du slug à partir du nom
+  /**
+   * Génération automatique du slug à partir du nom
+   */
   const generateSlug = () => {
     const slug = formData.name
       .toLowerCase()
@@ -187,7 +201,9 @@ const AdminCategoriesPage = () => {
     });
   };
   
-  // Validation du formulaire
+  /**
+   * Validation du formulaire
+   */
   const validateForm = () => {
     const newErrors = {};
     
@@ -208,83 +224,125 @@ const AdminCategoriesPage = () => {
     return Object.keys(newErrors).length === 0;
   };
   
-  const handleFormSubmit = (e) => {
+  /**
+   * Soumission du formulaire
+   */
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    if (formMode === 'add') {
-      // Simuler l'ajout d'une catégorie
-      const newCategory = {
-        ...formData,
-        id: Math.max(...categories.map(c => c.id)) + 1,
-        appsCount: 0
-      };
+    try {
+      setFormLoading(true);
+      setError(null);
       
-      setCategories([...categories, newCategory]);
+      if (formMode === 'add') {
+        // Créer une nouvelle catégorie
+        await createCategory(formData);
+        
+        setSnackbar({
+          open: true,
+          message: 'Catégorie ajoutée avec succès',
+          severity: 'success'
+        });
+      } else {
+        // Mettre à jour une catégorie existante
+        await updateCategory(formData.id, formData);
+        
+        setSnackbar({
+          open: true,
+          message: 'Catégorie mise à jour avec succès',
+          severity: 'success'
+        });
+      }
+      
+      // Recharger les catégories
+      await loadCategories();
+      
+      // Fermer le formulaire
+      handleCloseForm();
+    } catch (err) {
+      console.error('Erreur lors de l\'enregistrement de la catégorie:', err);
+      setError(err.message || 'Erreur lors de l\'enregistrement de la catégorie');
       
       setSnackbar({
         open: true,
-        message: 'Catégorie ajoutée avec succès',
-        severity: 'success'
+        message: err.message || 'Erreur lors de l\'enregistrement de la catégorie',
+        severity: 'error'
       });
-    } else {
-      // Simuler la mise à jour d'une catégorie
-      const updatedCategories = categories.map(category => 
-        category.id === formData.id ? { ...category, ...formData } : category
-      );
-      
-      setCategories(updatedCategories);
-      
-      setSnackbar({
-        open: true,
-        message: 'Catégorie mise à jour avec succès',
-        severity: 'success'
-      });
+    } finally {
+      setFormLoading(false);
     }
-    
-    handleCloseForm();
   };
   
-  // Suppression
+  /**
+   * Ouvre le dialogue de confirmation de suppression
+   */
   const handleDeleteClick = (category) => {
     setCategoryToDelete(category);
     setDeleteDialogOpen(true);
   };
   
-  const handleDeleteConfirm = () => {
-    // Vérifier si la catégorie contient des applications
-    if (categoryToDelete.appsCount > 0) {
+  /**
+   * Confirme la suppression d'une catégorie
+   */
+  const handleDeleteConfirm = async () => {
+    try {
+      setDeleteLoading(true);
+      setError(null);
+      
+      // Vérifier si la catégorie contient des applications
+      if (categoryToDelete.appsCount > 0) {
+        setSnackbar({
+          open: true,
+          message: `Impossible de supprimer la catégorie "${categoryToDelete.name}" car elle contient ${categoryToDelete.appsCount} application(s)`,
+          severity: 'error'
+        });
+        setDeleteDialogOpen(false);
+        setCategoryToDelete(null);
+        return;
+      }
+      
+      // Supprimer la catégorie
+      await deleteCategory(categoryToDelete.id);
+      
+      // Recharger les catégories
+      await loadCategories();
+      
       setSnackbar({
         open: true,
-        message: `Impossible de supprimer la catégorie "${categoryToDelete.name}" car elle contient ${categoryToDelete.appsCount} application(s)`,
+        message: 'Catégorie supprimée avec succès',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Erreur lors de la suppression de la catégorie:', err);
+      setError(err.message || 'Erreur lors de la suppression de la catégorie');
+      
+      setSnackbar({
+        open: true,
+        message: err.message || 'Erreur lors de la suppression de la catégorie',
         severity: 'error'
       });
+    } finally {
+      setDeleteLoading(false);
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
-      return;
     }
-    
-    // Simuler la suppression
-    setCategories(categories.filter(category => category.id !== categoryToDelete.id));
-    setDeleteDialogOpen(false);
-    setCategoryToDelete(null);
-    
-    setSnackbar({
-      open: true,
-      message: 'Catégorie supprimée avec succès',
-      severity: 'success'
-    });
   };
   
+  /**
+   * Annule la suppression d'une catégorie
+   */
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setCategoryToDelete(null);
   };
   
-  // Fermeture du snackbar
+  /**
+   * Ferme le snackbar
+   */
   const handleSnackbarClose = () => {
     setSnackbar({
       ...snackbar,
@@ -307,15 +365,33 @@ const AdminCategoriesPage = () => {
           <Typography variant="h4">
             Gestion des catégories
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenForm('add')}
-          >
-            Ajouter une catégorie
-          </Button>
+          <Box>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              sx={{ mr: 1 }}
+            >
+              Rafraîchir
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenForm('add')}
+            >
+              Ajouter une catégorie
+            </Button>
+          </Box>
         </Box>
+        
+        {/* Message d'erreur */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
         
         <TableContainer component={Paper}>
           <Table>
@@ -338,8 +414,8 @@ const AdminCategoriesPage = () => {
                     <TableCell>{category.description}</TableCell>
                     <TableCell>
                       <Chip
-                        label={`${category.appsCount} app${category.appsCount !== 1 ? 's' : ''}`}
-                        color={category.appsCount > 0 ? 'primary' : 'default'}
+                        label={`${category.appsCount || 0} app${(category.appsCount || 0) !== 1 ? 's' : ''}`}
+                        color={(category.appsCount || 0) > 0 ? 'primary' : 'default'}
                         size="small"
                       />
                     </TableCell>
@@ -358,7 +434,7 @@ const AdminCategoriesPage = () => {
                           onClick={() => handleDeleteClick(category)}
                           size="small"
                           color="error"
-                          disabled={category.appsCount > 0}
+                          disabled={(category.appsCount || 0) > 0}
                         >
                           <DeleteIcon fontSize="small" />
                         </IconButton>
@@ -412,6 +488,7 @@ const AdminCategoriesPage = () => {
                     error={!!formErrors.name}
                     helperText={formErrors.name}
                     required
+                    disabled={formLoading}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -424,6 +501,7 @@ const AdminCategoriesPage = () => {
                     error={!!formErrors.slug}
                     helperText={formErrors.slug || 'Identifiant unique pour l\'URL'}
                     required
+                    disabled={formLoading}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -438,12 +516,17 @@ const AdminCategoriesPage = () => {
                     required
                     multiline
                     rows={3}
+                    disabled={formLoading}
                   />
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseForm} startIcon={<CancelIcon />}>
+              <Button 
+                onClick={handleCloseForm} 
+                startIcon={<CancelIcon />}
+                disabled={formLoading}
+              >
                 Annuler
               </Button>
               <Button 
@@ -451,8 +534,13 @@ const AdminCategoriesPage = () => {
                 variant="contained" 
                 color="primary"
                 startIcon={<SaveIcon />}
+                disabled={formLoading}
               >
-                {formMode === 'add' ? 'Ajouter' : 'Mettre à jour'}
+                {formLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  formMode === 'add' ? 'Ajouter' : 'Mettre à jour'
+                )}
               </Button>
             </DialogActions>
           </form>
@@ -470,9 +558,23 @@ const AdminCategoriesPage = () => {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleDeleteCancel}>Annuler</Button>
-            <Button onClick={handleDeleteConfirm} color="error" autoFocus>
-              Supprimer
+            <Button 
+              onClick={handleDeleteCancel}
+              disabled={deleteLoading}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleDeleteConfirm} 
+              color="error" 
+              autoFocus
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <CircularProgress size={24} />
+              ) : (
+                'Supprimer'
+              )}
             </Button>
           </DialogActions>
         </Dialog>

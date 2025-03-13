@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Button,
@@ -8,67 +9,40 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  InputAdornment
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { 
+  Add as AddIcon,
+  Search as SearchIcon,
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
 
 // Composants personnalisés
 import UserList from '../components/admin/UserList';
 import UserForm from '../components/admin/UserForm';
 import DeleteConfirmDialog from '../components/admin/DeleteConfirmDialog';
 
-// Données fictives pour les utilisateurs
-const mockUsers = [
-  {
-    id: 1,
-    name: 'Jean Dupont',
-    email: 'jean.dupont@example.com',
-    role: 'admin',
-    avatar: 'https://mui.com/static/images/avatar/1.jpg',
-    isActive: true,
-    createdAt: '2025-03-01T10:30:00Z',
-    lastLogin: '2025-03-12T08:20:00Z'
-  },
-  {
-    id: 2,
-    name: 'Marie Martin',
-    email: 'marie.martin@example.com',
-    role: 'user',
-    avatar: 'https://mui.com/static/images/avatar/2.jpg',
-    isActive: true,
-    createdAt: '2025-03-02T14:45:00Z',
-    lastLogin: '2025-03-11T16:40:00Z'
-  },
-  {
-    id: 3,
-    name: 'Pierre Durand',
-    email: 'pierre.durand@example.com',
-    role: 'user',
-    avatar: 'https://mui.com/static/images/avatar/3.jpg',
-    isActive: true,
-    createdAt: '2025-03-03T09:15:00Z',
-    lastLogin: '2025-03-09T11:10:00Z'
-  },
-  {
-    id: 4,
-    name: 'Sophie Petit',
-    email: 'sophie.petit@example.com',
-    role: 'user',
-    avatar: 'https://mui.com/static/images/avatar/4.jpg',
-    isActive: false,
-    createdAt: '2025-03-04T16:20:00Z',
-    lastLogin: '2025-03-05T13:30:00Z'
-  }
-];
+// Importer le service des utilisateurs
+import { getUsers, updateUser, deleteUser } from '../services/users.service';
+import { register } from '../services/auth.service';
 
 /**
  * Page d'administration des utilisateurs
+ * 
+ * Cette page permet de gérer les utilisateurs de la marketplace :
+ * - Afficher la liste des utilisateurs avec pagination et filtrage
+ * - Ajouter, modifier et supprimer des utilisateurs
+ * - Activer/désactiver des utilisateurs
  */
 const AdminUsersPage = () => {
+  const { currentUser } = useAuth();
+  
   // État des utilisateurs
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [error, setError] = useState(null);
+  const [totalUsers, setTotalUsers] = useState(0);
   
   // État de la pagination
   const [page, setPage] = useState(0);
@@ -91,10 +65,12 @@ const AdminUsersPage = () => {
     confirmPassword: ''
   });
   const [formErrors, setFormErrors] = useState({});
+  const [formLoading, setFormLoading] = useState(false);
   
   // État pour la suppression
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   // État pour les notifications
   const [snackbar, setSnackbar] = useState({
@@ -103,41 +79,70 @@ const AdminUsersPage = () => {
     severity: 'success'
   });
   
-  // Charger les données au montage du composant
-  useEffect(() => {
-    // Simuler le chargement des données depuis l'API
-    setTimeout(() => {
-      setUsers(mockUsers);
+  /**
+   * Charge les utilisateurs depuis l'API
+   */
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Appel au service des utilisateurs
+      const result = await getUsers({
+        page: page + 1, // L'API commence à 1, MUI commence à 0
+        limit: rowsPerPage,
+        search: searchTerm,
+        role: ''
+      });
+      
+      setUsers(result.users || []);
+      setTotalUsers(result.pagination?.total || 0);
+    } catch (err) {
+      console.error('Erreur lors du chargement des utilisateurs:', err);
+      setError(err.message || 'Erreur lors du chargement des utilisateurs');
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
   
-  // Filtrer les utilisateurs lorsque le terme de recherche change
+  // Charger les utilisateurs au chargement du composant et lorsque les paramètres changent
   useEffect(() => {
-    const filtered = users.filter(user => 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-    setPage(0); // Réinitialiser la pagination
-  }, [users, searchTerm]);
+    loadUsers();
+  }, [page, rowsPerPage, searchTerm]);
   
-  // Gestion de la pagination
+  /**
+   * Gère le changement de page
+   */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
   
+  /**
+   * Gère le changement du nombre de lignes par page
+   */
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
   
-  // Gestion de la recherche
+  /**
+   * Gère la recherche
+   */
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
+    setPage(0);
   };
   
-  // Gestion du formulaire
+  /**
+   * Rafraîchit la liste des utilisateurs
+   */
+  const handleRefresh = () => {
+    loadUsers();
+  };
+  
+  /**
+   * Ouvre le formulaire d'ajout ou de modification
+   */
   const handleOpenForm = (mode, user = null) => {
     setFormMode(mode);
     
@@ -147,7 +152,7 @@ const AdminUsersPage = () => {
         name: user.name,
         email: user.email,
         role: user.role,
-        avatar: user.avatar,
+        avatar: user.avatar || '',
         isActive: user.isActive,
         password: '',
         confirmPassword: ''
@@ -169,10 +174,16 @@ const AdminUsersPage = () => {
     setFormOpen(true);
   };
   
+  /**
+   * Ferme le formulaire
+   */
   const handleCloseForm = () => {
     setFormOpen(false);
   };
   
+  /**
+   * Gère les changements dans le formulaire
+   */
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     
@@ -190,6 +201,9 @@ const AdminUsersPage = () => {
     }
   };
   
+  /**
+   * Gère les changements pour les switches
+   */
   const handleSwitchChange = (e) => {
     const { name, checked } = e.target;
     setFormData({
@@ -198,7 +212,9 @@ const AdminUsersPage = () => {
     });
   };
   
-  // Validation du formulaire
+  /**
+   * Validation du formulaire
+   */
   const validateForm = () => {
     const newErrors = {};
     
@@ -242,127 +258,187 @@ const AdminUsersPage = () => {
     return Object.keys(newErrors).length === 0;
   };
   
-  const handleFormSubmit = (e) => {
+  /**
+   * Soumission du formulaire
+   */
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    if (formMode === 'add') {
-      // Simuler l'ajout d'un utilisateur
-      const newUser = {
-        ...formData,
-        id: Math.max(...users.map(u => u.id)) + 1,
-        createdAt: new Date().toISOString(),
-        lastLogin: null
-      };
+    try {
+      setFormLoading(true);
+      setError(null);
       
-      // Supprimer les champs de mot de passe avant d'ajouter l'utilisateur
-      delete newUser.password;
-      delete newUser.confirmPassword;
-      
-      setUsers([...users, newUser]);
-      
-      setSnackbar({
-        open: true,
-        message: 'Utilisateur ajouté avec succès',
-        severity: 'success'
-      });
-    } else {
-      // Simuler la mise à jour d'un utilisateur
-      const updatedUsers = users.map(user => {
-        if (user.id === formData.id) {
-          // Créer une copie de formData sans les champs de mot de passe
-          const { password, confirmPassword, ...updatedUser } = formData;
-          return updatedUser;
+      if (formMode === 'add') {
+        // Créer un nouvel utilisateur
+        await register(formData.name, formData.email, formData.password, {
+          role: formData.role,
+          avatar: formData.avatar,
+          isActive: formData.isActive
+        });
+        
+        setSnackbar({
+          open: true,
+          message: 'Utilisateur ajouté avec succès',
+          severity: 'success'
+        });
+      } else {
+        // Mettre à jour un utilisateur existant
+        const { password, confirmPassword, ...userData } = formData;
+        
+        // Ajouter le mot de passe uniquement s'il est fourni
+        if (password) {
+          userData.password = password;
         }
-        return user;
-      });
+        
+        await updateUser(userData.id, userData);
+        
+        setSnackbar({
+          open: true,
+          message: 'Utilisateur mis à jour avec succès',
+          severity: 'success'
+        });
+      }
       
-      setUsers(updatedUsers);
+      // Recharger les utilisateurs
+      await loadUsers();
+      
+      // Fermer le formulaire
+      handleCloseForm();
+    } catch (err) {
+      console.error('Erreur lors de l\'enregistrement de l\'utilisateur:', err);
+      setError(err.message || 'Erreur lors de l\'enregistrement de l\'utilisateur');
       
       setSnackbar({
         open: true,
-        message: 'Utilisateur mis à jour avec succès',
-        severity: 'success'
+        message: err.message || 'Erreur lors de l\'enregistrement de l\'utilisateur',
+        severity: 'error'
       });
+    } finally {
+      setFormLoading(false);
     }
-    
-    handleCloseForm();
   };
   
-  // Gestion de la suppression
+  /**
+   * Ouvre le dialogue de confirmation de suppression
+   */
   const handleDeleteClick = (user) => {
     setUserToDelete(user);
     setDeleteDialogOpen(true);
   };
   
-  const handleDeleteConfirm = () => {
-    // Vérifier si c'est le dernier administrateur
-    if (userToDelete.role === 'admin') {
-      const adminCount = users.filter(user => user.role === 'admin').length;
+  /**
+   * Confirme la suppression d'un utilisateur
+   */
+  const handleDeleteConfirm = async () => {
+    try {
+      setDeleteLoading(true);
+      setError(null);
       
-      if (adminCount <= 1) {
-        setSnackbar({
-          open: true,
-          message: 'Impossible de supprimer le dernier administrateur',
-          severity: 'error'
-        });
-        setDeleteDialogOpen(false);
-        setUserToDelete(null);
-        return;
+      // Vérifier si c'est le dernier administrateur
+      if (userToDelete.role === 'admin') {
+        const adminCount = users.filter(user => user.role === 'admin').length;
+        
+        if (adminCount <= 1) {
+          setSnackbar({
+            open: true,
+            message: 'Impossible de supprimer le dernier administrateur',
+            severity: 'error'
+          });
+          setDeleteDialogOpen(false);
+          setUserToDelete(null);
+          return;
+        }
       }
+      
+      // Supprimer l'utilisateur
+      await deleteUser(userToDelete.id);
+      
+      // Recharger les utilisateurs
+      await loadUsers();
+      
+      setSnackbar({
+        open: true,
+        message: 'Utilisateur supprimé avec succès',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Erreur lors de la suppression de l\'utilisateur:', err);
+      setError(err.message || 'Erreur lors de la suppression de l\'utilisateur');
+      
+      setSnackbar({
+        open: true,
+        message: err.message || 'Erreur lors de la suppression de l\'utilisateur',
+        severity: 'error'
+      });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
-    
-    // Simuler la suppression
-    setUsers(users.filter(user => user.id !== userToDelete.id));
-    setDeleteDialogOpen(false);
-    setUserToDelete(null);
-    
-    setSnackbar({
-      open: true,
-      message: 'Utilisateur supprimé avec succès',
-      severity: 'success'
-    });
   };
   
+  /**
+   * Annule la suppression d'un utilisateur
+   */
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setUserToDelete(null);
   };
   
-  // Activer/désactiver un utilisateur
-  const handleToggleActive = (user) => {
-    // Vérifier si c'est le dernier administrateur actif
-    if (user.role === 'admin' && user.isActive) {
-      const activeAdminCount = users.filter(u => u.role === 'admin' && u.isActive).length;
+  /**
+   * Activer/désactiver un utilisateur
+   */
+  const handleToggleActive = async (user) => {
+    try {
+      setLoading(true);
+      setError(null);
       
-      if (activeAdminCount <= 1) {
-        setSnackbar({
-          open: true,
-          message: 'Impossible de désactiver le dernier administrateur actif',
-          severity: 'error'
-        });
-        return;
+      // Vérifier si c'est le dernier administrateur actif
+      if (user.role === 'admin' && user.isActive) {
+        const activeAdminCount = users.filter(u => u.role === 'admin' && u.isActive).length;
+        
+        if (activeAdminCount <= 1) {
+          setSnackbar({
+            open: true,
+            message: 'Impossible de désactiver le dernier administrateur actif',
+            severity: 'error'
+          });
+          return;
+        }
       }
+      
+      // Mettre à jour l'état de l'utilisateur
+      await updateUser(user.id, { ...user, isActive: !user.isActive });
+      
+      // Recharger les utilisateurs
+      await loadUsers();
+      
+      setSnackbar({
+        open: true,
+        message: `Utilisateur ${user.isActive ? 'désactivé' : 'activé'} avec succès`,
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Erreur lors de la modification de l\'utilisateur:', err);
+      setError(err.message || 'Erreur lors de la modification de l\'utilisateur');
+      
+      setSnackbar({
+        open: true,
+        message: err.message || 'Erreur lors de la modification de l\'utilisateur',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    // Mettre à jour l'état de l'utilisateur
-    const updatedUsers = users.map(u => 
-      u.id === user.id ? { ...u, isActive: !u.isActive } : u
-    );
-    
-    setUsers(updatedUsers);
-    
-    setSnackbar({
-      open: true,
-      message: `Utilisateur ${user.isActive ? 'désactivé' : 'activé'} avec succès`,
-      severity: 'success'
-    });
   };
   
-  // Fermeture du snackbar
+  /**
+   * Ferme le snackbar
+   */
   const handleSnackbarClose = () => {
     setSnackbar({
       ...snackbar,
@@ -370,7 +446,7 @@ const AdminUsersPage = () => {
     });
   };
   
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
@@ -385,15 +461,33 @@ const AdminUsersPage = () => {
           <Typography variant="h4">
             Gestion des utilisateurs
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenForm('add')}
-          >
-            Ajouter un utilisateur
-          </Button>
+          <Box>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              sx={{ mr: 1 }}
+            >
+              Rafraîchir
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenForm('add')}
+            >
+              Ajouter un utilisateur
+            </Button>
+          </Box>
         </Box>
+        
+        {/* Message d'erreur */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
         
         <Card sx={{ mb: 3 }}>
           <Box sx={{ p: 2 }}>
@@ -403,14 +497,23 @@ const AdminUsersPage = () => {
               variant="outlined"
               value={searchTerm}
               onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                )
+              }}
             />
           </Box>
         </Card>
         
         <UserList
-          users={filteredUsers}
+          users={users}
           page={page}
           rowsPerPage={rowsPerPage}
+          totalUsers={totalUsers}
+          loading={loading}
           handleChangePage={handleChangePage}
           handleChangeRowsPerPage={handleChangeRowsPerPage}
           handleEditClick={(user) => handleOpenForm('edit', user)}
@@ -424,6 +527,7 @@ const AdminUsersPage = () => {
           formMode={formMode}
           formData={formData}
           formErrors={formErrors}
+          formLoading={formLoading}
           handleFormChange={handleFormChange}
           handleSwitchChange={handleSwitchChange}
           handleFormSubmit={handleFormSubmit}
@@ -435,6 +539,7 @@ const AdminUsersPage = () => {
           content={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${userToDelete?.name}" ? Cette action est irréversible.`}
           onCancel={handleDeleteCancel}
           onConfirm={handleDeleteConfirm}
+          loading={deleteLoading}
         />
         
         <Snackbar

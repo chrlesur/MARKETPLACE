@@ -1,15 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Typography, Grid, Paper, Card, CardContent, CardHeader, Divider, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Grid, 
+  Paper, 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  Divider, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  CircularProgress,
+  Alert,
+  Button
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { 
   Apps as AppsIcon,
   Category as CategoryIcon,
   People as PeopleIcon,
   Download as DownloadIcon,
-  Star as StarIcon
+  Star as StarIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 
-// Composant pour les statistiques
+// Importer les services
+import { getApps } from '../services/apps.service';
+import { getCategories } from '../services/categories.service';
+import { getUsers } from '../services/users.service';
+
+/**
+ * Composant pour les statistiques
+ */
 const StatCard = ({ title, value, icon, color }) => {
   const theme = useTheme();
   
@@ -43,53 +68,89 @@ const StatCard = ({ title, value, icon, color }) => {
   );
 };
 
-// Composant pour les applications récentes
-const RecentApps = ({ apps }) => {
+/**
+ * Composant pour les applications récentes
+ */
+const RecentApps = ({ apps, loading }) => {
   return (
     <Card sx={{ height: '100%' }}>
       <CardHeader title="Applications récentes" />
       <Divider />
-      <List>
-        {apps.map((app, i) => (
-          <React.Fragment key={app.id}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+          <CircularProgress size={24} />
+        </Box>
+      ) : (
+        <List>
+          {apps.length > 0 ? (
+            apps.map((app, i) => (
+              <React.Fragment key={app.id}>
+                <ListItem>
+                  <ListItemText
+                    primary={app.name}
+                    secondary={`Ajoutée le ${new Date(app.createdAt).toLocaleDateString()}`}
+                  />
+                </ListItem>
+                {i < apps.length - 1 && <Divider />}
+              </React.Fragment>
+            ))
+          ) : (
             <ListItem>
-              <ListItemText
-                primary={app.name}
-                secondary={`Ajoutée le ${new Date(app.createdAt).toLocaleDateString()}`}
-              />
+              <ListItemText primary="Aucune application récente" />
             </ListItem>
-            {i < apps.length - 1 && <Divider />}
-          </React.Fragment>
-        ))}
-      </List>
+          )}
+        </List>
+      )}
     </Card>
   );
 };
 
-// Composant pour les utilisateurs récents
-const RecentUsers = ({ users }) => {
+/**
+ * Composant pour les utilisateurs récents
+ */
+const RecentUsers = ({ users, loading }) => {
   return (
     <Card sx={{ height: '100%' }}>
       <CardHeader title="Utilisateurs récents" />
       <Divider />
-      <List>
-        {users.map((user, i) => (
-          <React.Fragment key={user.id}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+          <CircularProgress size={24} />
+        </Box>
+      ) : (
+        <List>
+          {users.length > 0 ? (
+            users.map((user, i) => (
+              <React.Fragment key={user.id}>
+                <ListItem>
+                  <ListItemText
+                    primary={user.name}
+                    secondary={`Inscrit le ${new Date(user.createdAt).toLocaleDateString()}`}
+                  />
+                </ListItem>
+                {i < users.length - 1 && <Divider />}
+              </React.Fragment>
+            ))
+          ) : (
             <ListItem>
-              <ListItemText
-                primary={user.name}
-                secondary={`Inscrit le ${new Date(user.createdAt).toLocaleDateString()}`}
-              />
+              <ListItemText primary="Aucun utilisateur récent" />
             </ListItem>
-            {i < users.length - 1 && <Divider />}
-          </React.Fragment>
-        ))}
-      </List>
+          )}
+        </List>
+      )}
     </Card>
   );
 };
 
+/**
+ * Page du tableau de bord d'administration
+ * 
+ * Cette page affiche les statistiques globales et les données récentes
+ * de la marketplace.
+ */
 const AdminDashboardPage = () => {
+  const { currentUser } = useAuth();
+  
   const [stats, setStats] = useState({
     appsCount: 0,
     categoriesCount: 0,
@@ -101,35 +162,83 @@ const AdminDashboardPage = () => {
   const [recentApps, setRecentApps] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  useEffect(() => {
-    // Simuler le chargement des données depuis l'API
-    setTimeout(() => {
-      setStats({
-        appsCount: 12,
-        categoriesCount: 6,
-        usersCount: 48,
-        downloadsCount: 1250,
-        averageRating: 4.2
+  /**
+   * Charge les données du tableau de bord
+   */
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Récupérer les applications
+      const appsResult = await getApps({ 
+        limit: 100, // Récupérer un grand nombre pour calculer les statistiques
+        sort: 'newest' 
       });
       
-      setRecentApps([
-        { id: 1, name: 'Transkryptor', createdAt: '2025-03-10T10:30:00Z' },
-        { id: 2, name: 'DataVisualizer', createdAt: '2025-03-08T14:15:00Z' },
-        { id: 3, name: 'Collaborator', createdAt: '2025-03-05T09:45:00Z' }
-      ]);
+      const apps = appsResult.apps || [];
       
-      setRecentUsers([
-        { id: 1, name: 'Jean Dupont', createdAt: '2025-03-12T08:20:00Z' },
-        { id: 2, name: 'Marie Martin', createdAt: '2025-03-11T16:40:00Z' },
-        { id: 3, name: 'Pierre Durand', createdAt: '2025-03-09T11:10:00Z' }
-      ]);
+      // Récupérer les catégories
+      const categories = await getCategories();
       
+      // Récupérer les utilisateurs
+      const usersResult = await getUsers({ 
+        limit: 100, // Récupérer un grand nombre pour calculer les statistiques
+        sort: 'newest' 
+      });
+      
+      const users = usersResult.users || [];
+      
+      // Calculer les statistiques
+      const totalDownloads = apps.reduce((sum, app) => sum + (app.downloads || 0), 0);
+      
+      const appsWithRatings = apps.filter(app => app.averageRating);
+      const averageRating = appsWithRatings.length > 0
+        ? appsWithRatings.reduce((sum, app) => sum + app.averageRating, 0) / appsWithRatings.length
+        : 0;
+      
+      setStats({
+        appsCount: apps.length,
+        categoriesCount: categories.length,
+        usersCount: users.length,
+        downloadsCount: totalDownloads,
+        averageRating: averageRating
+      });
+      
+      // Récupérer les applications récentes (5 dernières)
+      const sortedApps = [...apps].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setRecentApps(sortedApps.slice(0, 5));
+      
+      // Récupérer les utilisateurs récents (5 derniers)
+      const sortedUsers = [...users].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setRecentUsers(sortedUsers.slice(0, 5));
+    } catch (err) {
+      console.error('Erreur lors du chargement des données du tableau de bord:', err);
+      setError(err.message || 'Erreur lors du chargement des données du tableau de bord');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
+  
+  // Charger les données au chargement du composant
+  useEffect(() => {
+    loadDashboardData();
   }, []);
   
-  if (loading) {
+  /**
+   * Rafraîchit les données du tableau de bord
+   */
+  const handleRefresh = () => {
+    loadDashboardData();
+  };
+  
+  if (loading && !recentApps.length && !recentUsers.length) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
@@ -140,9 +249,26 @@ const AdminDashboardPage = () => {
   return (
     <Box sx={{ py: 3 }}>
       <Container maxWidth="lg">
-        <Typography variant="h4" sx={{ mb: 3 }}>
-          Tableau de bord d'administration
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4">
+            Tableau de bord d'administration
+          </Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<RefreshIcon />}
+            onClick={handleRefresh}
+          >
+            Rafraîchir
+          </Button>
+        </Box>
+        
+        {/* Message d'erreur */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
         
         <Grid container spacing={3}>
           {/* Statistiques */}
@@ -189,10 +315,10 @@ const AdminDashboardPage = () => {
           
           {/* Applications et utilisateurs récents */}
           <Grid item xs={12} md={6}>
-            <RecentApps apps={recentApps} />
+            <RecentApps apps={recentApps} loading={loading} />
           </Grid>
           <Grid item xs={12} md={6}>
-            <RecentUsers users={recentUsers} />
+            <RecentUsers users={recentUsers} loading={loading} />
           </Grid>
         </Grid>
       </Container>

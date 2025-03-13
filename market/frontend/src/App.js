@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 
 // Composants de mise en page
@@ -8,14 +8,32 @@ import Footer from './components/layout/Footer';
 
 // Pages
 import HomePage from './pages/HomePage';
+import AppsPage from './pages/AppsPage';
+import AppDetailPage from './pages/AppDetailPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Routes d'administration
 import AdminRoutes from './components/admin/AdminRoutes';
 
-// Contexte d'authentification
-import { AuthProvider } from './contexts/AuthContext';
+// Contextes
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+
+// Composant pour les routes protégées
+const PrivateRoute = ({ children }) => {
+  const { isLoggedIn } = useAuth();
+  const location = useLocation();
+  
+  if (!isLoggedIn()) {
+    // Rediriger vers la page de connexion avec l'URL de retour
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+  
+  return children;
+};
 
 function App() {
   const location = useLocation();
@@ -34,12 +52,15 @@ function App() {
             <Box component="main" sx={{ flexGrow: 1 }}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                {/* Ces routes seront implémentées ultérieurement */}
-                {/* <Route path="/apps" element={<AppsPage />} />
+                <Route path="/apps" element={<AppsPage />} />
                 <Route path="/apps/:appId" element={<AppDetailPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route path="/profile" element={<ProfilePage />} /> */}
+                <Route path="/profile" element={
+                  <PrivateRoute>
+                    <ProfilePage />
+                  </PrivateRoute>
+                } />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Box>

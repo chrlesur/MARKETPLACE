@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Button,
@@ -26,7 +27,9 @@ import {
   CircularProgress,
   Chip,
   Tooltip,
-  InputAdornment
+  InputAdornment,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,174 +38,164 @@ import {
   Search as SearchIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  Star as StarIcon
+  Star as StarIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 
-// Données fictives pour les applications
-const mockApps = [
-  {
-    id: 1,
-    name: 'Transkryptor',
-    slug: 'transkryptor',
-    description: {
-      short: 'Application de transcription audio et d\'analyse de contenu utilisant l\'IA.'
-    },
-    developer: {
-      name: 'Christophe LESUR'
-    },
-    category: {
-      name: 'Productivité',
-      slug: 'productivity'
-    },
-    pricing: {
-      type: 'free',
-      price: 0
-    },
-    averageRating: 4.8,
-    downloads: 1250,
-    isActive: true,
-    isFeatured: true,
-    createdAt: '2025-03-10T10:30:00Z',
-    updatedAt: '2025-03-12T14:45:00Z'
-  },
-  {
-    id: 2,
-    name: 'DataVisualizer',
-    slug: 'data-visualizer',
-    description: {
-      short: 'Créez des visualisations de données interactives et des tableaux de bord personnalisés.'
-    },
-    developer: {
-      name: 'DataViz Inc.'
-    },
-    category: {
-      name: 'Analyse de données',
-      slug: 'data-analysis'
-    },
-    pricing: {
-      type: 'paid',
-      price: 29.99
-    },
-    averageRating: 4.2,
-    downloads: 850,
-    isActive: true,
-    isFeatured: false,
-    createdAt: '2025-03-08T14:15:00Z',
-    updatedAt: '2025-03-11T09:20:00Z'
-  },
-  {
-    id: 3,
-    name: 'Collaborator',
-    slug: 'collaborator',
-    description: {
-      short: 'Plateforme de collaboration en temps réel pour les équipes distribuées.'
-    },
-    developer: {
-      name: 'TeamWork Solutions'
-    },
-    category: {
-      name: 'Communication',
-      slug: 'communication'
-    },
-    pricing: {
-      type: 'subscription',
-      price: 19.99
-    },
-    averageRating: 4.5,
-    downloads: 1120,
-    isActive: true,
-    isFeatured: false,
-    createdAt: '2025-03-05T09:45:00Z',
-    updatedAt: '2025-03-09T16:30:00Z'
-  },
-  {
-    id: 4,
-    name: 'CodeAssistant',
-    slug: 'code-assistant',
-    description: {
-      short: 'Assistant de programmation alimenté par l\'IA pour les développeurs.'
-    },
-    developer: {
-      name: 'DevTools Pro'
-    },
-    category: {
-      name: 'Développement',
-      slug: 'development'
-    },
-    pricing: {
-      type: 'paid',
-      price: 49.99
-    },
-    averageRating: 4.7,
-    downloads: 980,
-    isActive: false,
-    isFeatured: false,
-    createdAt: '2025-03-02T11:20:00Z',
-    updatedAt: '2025-03-07T13:10:00Z'
-  }
-];
+// Importer le service des applications
+import { getApps, deleteApp } from '../services/apps.service';
 
+/**
+ * Page d'administration des applications
+ * 
+ * Cette page permet de gérer les applications de la marketplace :
+ * - Afficher la liste des applications avec pagination et filtrage
+ * - Ajouter, modifier et supprimer des applications
+ * - Voir les détails d'une application
+ */
 const AdminAppsPage = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [appToDelete, setAppToDelete] = useState(null);
+  const [totalApps, setTotalApps] = useState(0);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
   
-  useEffect(() => {
-    // Simuler le chargement des données depuis l'API
-    setTimeout(() => {
-      setApps(mockApps);
+  /**
+   * Charge les applications depuis l'API
+   */
+  const loadApps = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Appel au service des applications
+      const result = await getApps({
+        page: page + 1, // L'API commence à 1, MUI commence à 0
+        limit: rowsPerPage,
+        search: searchTerm
+      });
+      
+      setApps(result.apps || []);
+      setTotalApps(result.pagination?.total || 0);
+    } catch (err) {
+      console.error('Erreur lors du chargement des applications:', err);
+      setError(err.message || 'Erreur lors du chargement des applications');
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
   
-  // Filtrer les applications en fonction du terme de recherche
-  const filteredApps = apps.filter(app => 
-    app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.description.short.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.developer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Charger les applications au chargement du composant et lorsque les paramètres changent
+  useEffect(() => {
+    loadApps();
+  }, [page, rowsPerPage, searchTerm]);
   
-  // Pagination
+  /**
+   * Gère le changement de page
+   */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
   
+  /**
+   * Gère le changement du nombre de lignes par page
+   */
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
   
-  // Recherche
+  /**
+   * Gère la recherche
+   */
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
     setPage(0);
   };
   
-  // Suppression
+  /**
+   * Gère le clic sur le bouton de suppression
+   */
   const handleDeleteClick = (app) => {
     setAppToDelete(app);
     setDeleteDialogOpen(true);
   };
   
-  const handleDeleteConfirm = () => {
-    // Simuler la suppression
-    setApps(apps.filter(app => app.id !== appToDelete.id));
-    setDeleteDialogOpen(false);
-    setAppToDelete(null);
+  /**
+   * Confirme la suppression d'une application
+   */
+  const handleDeleteConfirm = async () => {
+    try {
+      setLoading(true);
+      
+      // Appel au service des applications pour supprimer l'application
+      await deleteApp(appToDelete.id);
+      
+      // Recharger les applications
+      await loadApps();
+      
+      // Afficher un message de succès
+      setSnackbar({
+        open: true,
+        message: 'Application supprimée avec succès',
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Erreur lors de la suppression de l\'application:', err);
+      setError(err.message || 'Erreur lors de la suppression de l\'application');
+      
+      // Afficher un message d'erreur
+      setSnackbar({
+        open: true,
+        message: err.message || 'Erreur lors de la suppression de l\'application',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setAppToDelete(null);
+    }
   };
   
+  /**
+   * Annule la suppression d'une application
+   */
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
     setAppToDelete(null);
   };
   
-  // Formatage du prix
+  /**
+   * Ferme le snackbar
+   */
+  const handleSnackbarClose = () => {
+    setSnackbar({
+      ...snackbar,
+      open: false
+    });
+  };
+  
+  /**
+   * Rafraîchit la liste des applications
+   */
+  const handleRefresh = () => {
+    loadApps();
+  };
+  
+  /**
+   * Formate le prix d'une application
+   */
   const formatPrice = (app) => {
     switch (app.pricing.type) {
       case 'free':
@@ -227,21 +220,41 @@ const AdminAppsPage = () => {
   return (
     <Box sx={{ py: 3 }}>
       <Container maxWidth="lg">
+        {/* En-tête de la page */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">
             Gestion des applications
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            component={RouterLink}
-            to="/admin/apps/new"
-          >
-            Ajouter une application
-          </Button>
+          <Box>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+              sx={{ mr: 1 }}
+            >
+              Rafraîchir
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              component={RouterLink}
+              to="/admin/apps/new"
+            >
+              Ajouter une application
+            </Button>
+          </Box>
         </Box>
         
+        {/* Message d'erreur */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        
+        {/* Barre de recherche */}
         <Card sx={{ mb: 3 }}>
           <Box sx={{ p: 2 }}>
             <TextField
@@ -261,6 +274,7 @@ const AdminAppsPage = () => {
           </Box>
         </Card>
         
+        {/* Tableau des applications */}
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -276,71 +290,69 @@ const AdminAppsPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredApps
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((app) => (
-                  <TableRow key={app.id}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {app.name}
-                        {app.isFeatured && (
-                          <Tooltip title="Application vedette">
-                            <StarIcon sx={{ ml: 1, color: 'warning.main', fontSize: 18 }} />
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>{app.category.name}</TableCell>
-                    <TableCell>{app.developer.name}</TableCell>
-                    <TableCell>{formatPrice(app)}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {app.averageRating.toFixed(1)}
-                        <StarIcon sx={{ ml: 0.5, color: 'warning.main', fontSize: 18 }} />
-                      </Box>
-                    </TableCell>
-                    <TableCell>{app.downloads}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={app.isActive ? 'Actif' : 'Inactif'}
-                        color={app.isActive ? 'success' : 'default'}
+              {apps.map((app) => (
+                <TableRow key={app.id}>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {app.name}
+                      {app.isFeatured && (
+                        <Tooltip title="Application vedette">
+                          <StarIcon sx={{ ml: 1, color: 'warning.main', fontSize: 18 }} />
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>{app.category.name}</TableCell>
+                  <TableCell>{app.developer.name}</TableCell>
+                  <TableCell>{formatPrice(app)}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {app.averageRating ? app.averageRating.toFixed(1) : 'N/A'}
+                      <StarIcon sx={{ ml: 0.5, color: 'warning.main', fontSize: 18 }} />
+                    </Box>
+                  </TableCell>
+                  <TableCell>{app.downloads}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={app.isActive ? 'Actif' : 'Inactif'}
+                      color={app.isActive ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="Voir">
+                      <IconButton
+                        component={RouterLink}
+                        to={`/apps/${app.slug}`}
                         size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Voir">
-                        <IconButton
-                          component={RouterLink}
-                          to={`/apps/${app.slug}`}
-                          size="small"
-                          sx={{ mr: 1 }}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Modifier">
-                        <IconButton
-                          component={RouterLink}
-                          to={`/admin/apps/${app.id}/edit`}
-                          size="small"
-                          sx={{ mr: 1 }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Supprimer">
-                        <IconButton
-                          onClick={() => handleDeleteClick(app)}
-                          size="small"
-                          color="error"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              {filteredApps.length === 0 && (
+                        sx={{ mr: 1 }}
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Modifier">
+                      <IconButton
+                        component={RouterLink}
+                        to={`/admin/apps/${app.id}/edit`}
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Supprimer">
+                      <IconButton
+                        onClick={() => handleDeleteClick(app)}
+                        size="small"
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {apps.length === 0 && !loading && (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
                     Aucune application trouvée
@@ -352,7 +364,7 @@ const AdminAppsPage = () => {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredApps.length}
+            count={totalApps}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -380,6 +392,22 @@ const AdminAppsPage = () => {
             </Button>
           </DialogActions>
         </Dialog>
+        
+        {/* Snackbar pour les messages de succès/erreur */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );

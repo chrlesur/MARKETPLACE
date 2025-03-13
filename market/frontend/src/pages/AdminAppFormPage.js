@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Button,
@@ -20,70 +21,34 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  Paper
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 
-// Données fictives pour les catégories
-const mockCategories = [
-  { id: 1, name: 'Productivité', slug: 'productivity' },
-  { id: 2, name: 'Créativité', slug: 'creativity' },
-  { id: 3, name: 'Communication', slug: 'communication' },
-  { id: 4, name: 'Analyse de données', slug: 'data-analysis' },
-  { id: 5, name: 'Intelligence artificielle', slug: 'ai' },
-  { id: 6, name: 'Développement', slug: 'development' }
-];
+// Importer les services
+import { getAppById, createApp, updateApp } from '../services/apps.service';
+import { getCategories } from '../services/categories.service';
 
-// Données fictives pour les applications
-const mockApps = [
-  {
-    id: 1,
-    name: 'Transkryptor',
-    slug: 'transkryptor',
-    description: {
-      short: 'Application de transcription audio et d\'analyse de contenu utilisant l\'IA.',
-      full: 'Transkryptor est une application web de transcription audio et d\'analyse de contenu utilisant l\'intelligence artificielle. Elle permet de convertir des fichiers audio en texte et d\'analyser ce texte pour en extraire des informations pertinentes.'
-    },
-    developer: {
-      name: 'Christophe LESUR',
-      website: 'https://christophe-lesur.fr',
-      email: 'contact@christophe-lesur.fr'
-    },
-    category: 1,
-    tags: ['transcription', 'audio', 'ia', 'analyse'],
-    images: {
-      icon: 'https://via.placeholder.com/128',
-      screenshots: [
-        'https://via.placeholder.com/800x450',
-        'https://via.placeholder.com/800x450',
-        'https://via.placeholder.com/800x450'
-      ]
-    },
-    pricing: {
-      type: 'free',
-      price: 0
-    },
-    url: '/apps/transkryptor',
-    apiEndpoint: '/api/transkryptor',
-    version: '1.0.0',
-    requirements: {
-      browser: ['Chrome', 'Firefox', 'Safari', 'Edge'],
-      api: ['OpenAI', 'Anthropic']
-    },
-    isActive: true,
-    isFeatured: true
-  }
-];
-
+/**
+ * Page de formulaire d'application
+ * 
+ * Cette page permet de créer ou modifier une application :
+ * - Formulaire avec validation
+ * - Chargement des données depuis l'API en mode édition
+ * - Soumission des données vers l'API
+ */
 const AdminAppFormPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!id;
+  const { currentUser } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -127,43 +92,61 @@ const AdminAppFormPage = () => {
   // Erreurs de validation
   const [errors, setErrors] = useState({});
   
+  /**
+   * Charge les catégories et les données de l'application en mode édition
+   */
   useEffect(() => {
-    // Charger les catégories
-    setCategories(mockCategories);
-    
-    // Si en mode édition, charger les données de l'application
-    if (isEditMode) {
-      // Simuler le chargement des données depuis l'API
-      setTimeout(() => {
-        const app = mockApps.find(app => app.id === parseInt(id));
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
         
-        if (app) {
-          setFormData({
-            ...app,
-            tags: app.tags.join(', '),
-            requirements: {
-              browser: app.requirements.browser.join(', '),
-              api: app.requirements.api.join(', ')
-            }
-          });
-        } else {
-          // Application non trouvée
-          setSnackbar({
-            open: true,
-            message: 'Application non trouvée',
-            severity: 'error'
-          });
-          navigate('/admin/apps');
+        // Charger les catégories
+        const categoriesData = await getCategories();
+        setCategories(categoriesData || []);
+        
+        // Si en mode édition, charger les données de l'application
+        if (isEditMode) {
+          const app = await getAppById(id);
+          
+          if (app) {
+            // Formater les données pour le formulaire
+            setFormData({
+              ...app,
+              tags: Array.isArray(app.tags) ? app.tags.join(', ') : app.tags,
+              requirements: {
+                browser: Array.isArray(app.requirements?.browser) 
+                  ? app.requirements.browser.join(', ') 
+                  : app.requirements?.browser || '',
+                api: Array.isArray(app.requirements?.api) 
+                  ? app.requirements.api.join(', ') 
+                  : app.requirements?.api || ''
+              }
+            });
+          } else {
+            // Application non trouvée
+            setSnackbar({
+              open: true,
+              message: 'Application non trouvée',
+              severity: 'error'
+            });
+            navigate('/admin/apps');
+          }
         }
-        
+      } catch (err) {
+        console.error('Erreur lors du chargement des données:', err);
+        setError(err.message || 'Erreur lors du chargement des données');
+      } finally {
         setLoading(false);
-      }, 1000);
-    } else {
-      setLoading(false);
-    }
+      }
+    };
+    
+    loadData();
   }, [id, isEditMode, navigate]);
   
-  // Gestion des changements dans le formulaire
+  /**
+   * Gestion des changements dans le formulaire
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -192,7 +175,9 @@ const AdminAppFormPage = () => {
     }
   };
   
-  // Gestion des changements pour les switches
+  /**
+   * Gestion des changements pour les switches
+   */
   const handleSwitchChange = (e) => {
     const { name, checked } = e.target;
     setFormData({
@@ -201,7 +186,9 @@ const AdminAppFormPage = () => {
     });
   };
   
-  // Gestion des changements pour les screenshots
+  /**
+   * Gestion des changements pour les screenshots
+   */
   const handleScreenshotChange = (index, value) => {
     const newScreenshots = [...formData.images.screenshots];
     newScreenshots[index] = value;
@@ -215,7 +202,9 @@ const AdminAppFormPage = () => {
     });
   };
   
-  // Génération automatique du slug à partir du nom
+  /**
+   * Génération automatique du slug à partir du nom
+   */
   const generateSlug = () => {
     const slug = formData.name
       .toLowerCase()
@@ -228,7 +217,9 @@ const AdminAppFormPage = () => {
     });
   };
   
-  // Validation du formulaire
+  /**
+   * Validation du formulaire
+   */
   const validateForm = () => {
     const newErrors = {};
     
@@ -269,8 +260,39 @@ const AdminAppFormPage = () => {
     return Object.keys(newErrors).length === 0;
   };
   
-  // Soumission du formulaire
-  const handleSubmit = (e) => {
+  /**
+   * Préparation des données pour l'API
+   */
+  const prepareDataForApi = () => {
+    // Convertir les tags en tableau
+    const tags = formData.tags
+      ? formData.tags.split(',').map(tag => tag.trim())
+      : [];
+    
+    // Convertir les requirements en tableaux
+    const browser = formData.requirements.browser
+      ? formData.requirements.browser.split(',').map(item => item.trim())
+      : [];
+    
+    const api = formData.requirements.api
+      ? formData.requirements.api.split(',').map(item => item.trim())
+      : [];
+    
+    // Retourner les données formatées
+    return {
+      ...formData,
+      tags,
+      requirements: {
+        browser,
+        api
+      }
+    };
+  };
+  
+  /**
+   * Soumission du formulaire
+   */
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -282,25 +304,50 @@ const AdminAppFormPage = () => {
       return;
     }
     
-    setSaving(true);
-    
-    // Simuler l'enregistrement
-    setTimeout(() => {
-      setSaving(false);
-      setSnackbar({
-        open: true,
-        message: isEditMode ? 'Application mise à jour avec succès' : 'Application créée avec succès',
-        severity: 'success'
-      });
+    try {
+      setSaving(true);
+      setError(null);
+      
+      // Préparer les données pour l'API
+      const appData = prepareDataForApi();
+      
+      // Créer ou mettre à jour l'application
+      if (isEditMode) {
+        await updateApp(id, appData);
+        setSnackbar({
+          open: true,
+          message: 'Application mise à jour avec succès',
+          severity: 'success'
+        });
+      } else {
+        await createApp(appData);
+        setSnackbar({
+          open: true,
+          message: 'Application créée avec succès',
+          severity: 'success'
+        });
+      }
       
       // Rediriger vers la liste des applications après un court délai
       setTimeout(() => {
         navigate('/admin/apps');
       }, 1500);
-    }, 1500);
+    } catch (err) {
+      console.error('Erreur lors de l\'enregistrement:', err);
+      setError(err.message || 'Erreur lors de l\'enregistrement');
+      setSnackbar({
+        open: true,
+        message: err.message || 'Erreur lors de l\'enregistrement',
+        severity: 'error'
+      });
+    } finally {
+      setSaving(false);
+    }
   };
   
-  // Fermeture du snackbar
+  /**
+   * Fermeture du snackbar
+   */
   const handleSnackbarClose = () => {
     setSnackbar({
       ...snackbar,
@@ -331,6 +378,13 @@ const AdminAppFormPage = () => {
             Retour
           </Button>
         </Box>
+        
+        {/* Message d'erreur */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
         
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
