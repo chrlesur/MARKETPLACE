@@ -1,0 +1,109 @@
+# Backend de la Marketplace Web
+
+Ce projet contient le code backend (API) de la Marketplace Web, une plateforme moderne et élégante permettant de présenter, distribuer et gérer diverses applications web.
+
+## Technologies utilisées
+
+- Node.js
+- Express.js
+- MongoDB (avec Mongoose)
+- JWT pour l'authentification
+- Autres : cors, helmet, compression, morgan, etc.
+
+## Structure du projet
+
+```
+backend/
+├── config/              # Configuration (base de données, etc.)
+├── controllers/         # Contrôleurs pour gérer la logique métier
+├── middleware/          # Middleware personnalisés
+├── models/              # Modèles de données (Mongoose)
+├── routes/              # Routes API
+├── .env                 # Variables d'environnement
+├── package.json         # Dépendances et scripts
+└── server.js            # Point d'entrée du serveur
+```
+
+## Installation
+
+```bash
+# Installer les dépendances
+npm install
+```
+
+## Développement
+
+```bash
+# Démarrer le serveur en mode développement
+npm run dev
+```
+
+Le serveur sera accessible à l'adresse [http://localhost:3001](http://localhost:3001).
+
+## Production
+
+```bash
+# Démarrer le serveur en mode production
+npm start
+```
+
+## Variables d'environnement
+
+Créez un fichier `.env` à la racine du projet avec les variables suivantes :
+
+```
+PORT=3001
+NODE_ENV=development
+JWT_SECRET=votre_secret_jwt
+JWT_EXPIRES_IN=7d
+MONGODB_URI=votre_uri_mongodb
+API_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+```
+
+## API Endpoints
+
+### Authentification
+
+- `POST /api/auth/register` - Inscription d'un nouvel utilisateur
+- `POST /api/auth/login` - Connexion d'un utilisateur
+- `GET /api/auth/me` - Récupérer les informations de l'utilisateur connecté
+
+### Applications
+
+- `GET /api/apps` - Récupérer toutes les applications
+- `GET /api/apps/:id` - Récupérer une application spécifique
+- `POST /api/apps` - Créer une nouvelle application (admin)
+- `PUT /api/apps/:id` - Mettre à jour une application (admin)
+- `DELETE /api/apps/:id` - Supprimer une application (admin)
+
+### Catégories
+
+- `GET /api/categories` - Récupérer toutes les catégories
+- `GET /api/categories/:id` - Récupérer une catégorie spécifique
+- `POST /api/categories` - Créer une nouvelle catégorie (admin)
+- `PUT /api/categories/:id` - Mettre à jour une catégorie (admin)
+- `DELETE /api/categories/:id` - Supprimer une catégorie (admin)
+
+### Utilisateurs
+
+- `GET /api/users` - Récupérer tous les utilisateurs (admin)
+- `GET /api/users/:id` - Récupérer un utilisateur spécifique (admin)
+- `PUT /api/users/:id` - Mettre à jour un utilisateur (admin ou propriétaire)
+- `DELETE /api/users/:id` - Supprimer un utilisateur (admin ou propriétaire)
+
+## Déploiement
+
+Le déploiement est géré par le script `scripts/deploy.sh` à la racine du projet. Ce script permet de déployer le backend sur le serveur distant.
+
+```bash
+# Depuis la racine du projet
+./scripts/deploy.sh
+```
+
+## Bonnes pratiques
+
+- Utiliser les contrôleurs pour la logique métier
+- Utiliser les middleware pour la validation et l'authentification
+- Documenter les endpoints API
+- Gérer correctement les erreurs

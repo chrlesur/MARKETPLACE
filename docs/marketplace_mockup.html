@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace Web - Mockup Interactif</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #4338ca;
+      --primary-light: #818cf8;
+      --secondary: #10b981;
+      --secondary-dark: #059669;
+      --secondary-light: #34d399;
+      --dark-text: #1f2937;
+      --light-text: #6b7280;
+      --background: #f9fafb;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+
+    .dark-mode {
+      --primary: #818cf8;
+      --primary-dark: #6366f1;
+      --primary-light: #a5b4fc;
+      --secondary: #34d399;
+      --secondary-dark: #10b981;
+      --secondary-light: #6ee7b7;
+      --dark-text: #f9fafb;
+      --light-text: #9ca3af;
+      --background: #111827;
+      --card-bg: #1f2937;
+      --border: #374151;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--dark-text);
+      transition: all 0.3s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header {
+      background-color: var(--card-bg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 24px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--dark-text);
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--primary);
+    }
+
+    .nav-active {
+      color: var(--primary);
+      position: relative;
+    }
+
+    .nav-active::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--primary);
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      font-size: 0.875rem;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--primary-light);
+      color: white;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--secondary-dark);
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--light-text);
+      cursor: pointer;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 16px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+      color: white;
+      padding: 80px 0;
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      max-width: 600px;
+      margin: 0 auto 32px;
+      opacity: 0.9;
+    }
+
+    .search-bar {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+    }
+
+    .search-input {
+      flex-grow: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 6px 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .search-btn {
+      padding: 12px 24px;
+      background-color: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .search-btn:hover {
+      background-color: var(--secondary-dark);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title a {
+      font-size: 0.875rem;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 60px;
+    }
+
+    .category-card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .category-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .category-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .category-card p {
+      font-size: 0.875rem;
+      color: var(--light-text);
+    }
+
+    .featured-app {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 60px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .featured-app:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .featured-app-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .featured-app-image {
+      height: 100%;
+      background-color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .featured-app-details {
+      padding: 32px;
+    }
+
+    .app-badge {
+      display: inline-block;
+      background-color: var(--error);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .featured-app-details h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .featured-app-details p {
+      color: var(--light-text);
+      margin-bottom: 24px;
+    }
+
+    .app-meta {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .meta-item h4 {
+      font-size: 0.75rem;
+      color: var(--light-text);
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+
+    .meta-item p {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--dark-text);
+      margin: 0;
+    }
+
+    .apps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .app-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .app-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .app-card-image {
+      height: 160px;
+      background-color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .app-card-content {
+      padding: 16px;
+    }
+
+    .app-card-content h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .app-card-content p {
+      font-size: 0.875rem;
+      color: var(--light-text);
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .app-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .app-price {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rating-star {
+      color: #f59e0b;
+    }
+
+    .cta-section {
+      background-color: var(--primary);
+      color: white;
+      padding: 60px 0;
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .cta-section h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .cta-section p {
+      font-size: 1.125rem;
+      max-width: 600px;
+      margin: 0 auto 32px;
+      opacity: 0.9;
+    }
+
+    footer {
+      background-color: var(--card-bg);
+      padding: 60px 0 20px;
+      color: var(--light-text);
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-column h3 {
+      color: var(--dark-text);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .footer-column ul {
+      list-style: none;
+    }
+
+    .footer-column li {
+      margin-bottom: 8px;
+    }
+
+    .footer-column a {
+      color: var(--light-text);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+
+    .footer-column a:hover {
+      color: var(--primary);
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--dark-text);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--light-text);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--dark-text);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+      background-color: var(--card-bg);
+      color: var(--dark-text);
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .form-footer {
+      margin-top: 24px;
+      text-align: right;
+    }
+
+    .form-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-right: 16px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      nav ul {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .featured-app-content {
+        grid-template-columns: 1fr;
+      }
+
+      .featured-app-image {
+        height: 200px;
+      }
+
+      .app-meta {
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+
+    /* Hamburger menu for mobile */
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 30px;
+      height: 21px;
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      display: block;
+      height: 3px;
+      width: 100%;
+      background-color: var(--dark-text);
+      border-radius: 3px;
+    }
+
+    @media (max-width: 768px) {
+      .menu-toggle {
+        display: flex;
+      }
+
+      .header-content {
+        flex-direction: row;
+      }
+
+      .nav-container {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 70%;
+        height: 100%;
+        background-color: var(--card-bg);
+        padding: 60px 20px 20px;
+        transition: left 0.3s;
+        z-index: 90;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .nav-container.active {
+        left: 0;
+      }
+
+      .nav-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--light-text);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <a href="#" class="logo">
+          <div class="logo-icon">M</div>
+          <span>Marketplace</span>
+        </a>
+        
+        <div class="menu-toggle" id="menuToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        
+        <div class="nav-container" id="navContainer">
+          <button class="nav-close" id="navClose">×</button>
+          <nav>
+            <ul>
+              <li><a href="#" class="nav-active">Accueil</a></li>
+              <li><a href="#">Applications</a></li>
+              <li><a href="#">Catégories</a></li>
+              <li><a href="#">À propos</a></li>
+            </ul>
+          </nav>
+        </div>
+        
+        <div class="auth-buttons">
+          <button class="btn btn-outline" id="loginBtn">Connexion</button>
+          <button class="btn btn-primary" id="registerBtn">Inscription</button>
+          <button class="theme-toggle" id="themeToggle">🌙</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Découvrez des applications web innovantes</h1>
+      <p>Explorez notre catalogue d'applications web de haute qualité, conçues pour améliorer votre productivité et votre créativité.</p>
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="Rechercher une application...">
+        <button class="search-btn">Rechercher</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="section-title">
+      <h2>Catégories populaires</h2>
+      <a href="#">Voir toutes →</a>
+    </div>
+    <div class="categories">
+      <div class="category-card">
+        <h3>Productivité</h3>
+        <p>24 applications</p>
+      </div>
+      <div class="category-card">
+        <h3>Créativité</h3>
+        <p>18 applications</p>
+      </div>
+      <div class="category-card">
+        <h3>Communication</h3>
+        <p>15 applications</p>
+      </div>
+      <div class="category-card">
+        <h3>Analyse de données</h3>
+        <p>12 applications</p>
+      </div>
+      <div class="category-card">
+        <h3>Intelligence artificielle</h3>
+        <p>9 applications</p>
+      </div>
+      <div class="category-card">
+        <h3>Développement</h3>
+        <p>21 applications</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="section-title">
+      <h2>Application vedette</h2>
+    </div>
+    <div class="featured-app">
+      <div class="featured-app-content">
+        <div class="featured-app-image">
+          Transkryptor
+        </div>
+        <div class="featured-app-details">
+          <span class="app-badge">Application vedette</span>
+          <h2>Transkryptor</h2>
+          <p>Application de transcription audio et d'analyse de contenu utilisant l'IA.</p>
+          <div class="app-meta">
+            <div class="meta-item">
+              <h4>Développeur</h4>
+              <p>Christophe LESUR</p>
+            </div>
+            <div class="meta-item">
+              <h4>Catégorie</h4>
+              <p>Productivité</p>
+            </div>
+            <div class="meta-item">
+              <h4>Note</h4>
+              <p>4.8 ⭐</p>
+            </div>
+          </div>
+          <button class="btn btn-primary">Voir l'application</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="section-title">
+      <h2>Applications populaires</h2>
+      <a href="#">Voir toutes →</a>
+    </div>
+    <div class="apps-grid">
+      <div class="app-card">
+        <div class="app-card-image" style="background-color: #4f46e5;">
+          Transkryptor
+        </div>
+        <div class="app-card-content">
+          <h3>Transkryptor</h3>
+          <p>Application de transcription audio et d'analyse de contenu utilisant l'IA.</p>
+          <div class="app-card-footer">
+            <span class="app-price">Gratuit</span>
+            <div class="rating">
+              <span class="rating-star">★</span>
+              <span>4.8</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-image" style="background-color: #10b981;">
+          DataVisualizer
+        </div>
+        <div class="app-card-content">
+          <h3>DataVisualizer</h3>
+          <p>Créez des visualisations de données interactives et des tableaux de bord personnalisés.</p>
+          <div class="app-card-footer">
+            <span class="app-price">29,99 €</span>
+            <div class="rating">
+              <span class="rating-star">★</span>
+              <span>4.2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="app-card">
+        <div class="app-card-image" style="background-color: #f59e0b;">
+          Collaborator
+        </div>
+        <div class="app-card-content">
+          <h3>Collaborator</h3>
+          <p>Plateforme de collaboration en temps réel pour les équipes distribuées.</p>
+          <div class="app-card-footer">
+            <span class="app-price">19,99 €/mois</span>
+            <div class="rating">
+              <span class="rating-star">★</span>
+              <span>4.5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="container">
+      <h2>Prêt à découvrir plus d'applications ?</h2>
+      <p>Explorez notre catalogue complet d'applications web innovantes.</p>
+      <button class="btn btn-secondary">Explorer le catalogue</button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <h3>Marketplace</h3>
+          <ul>
+            <li><a href="#">À propos</a></li>
+            <li><a href="#">Carrières</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Actualités</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Produits</h3>
+          <ul>
+            <li><a href="#">Applications</a></li>
+            <li><a href="#">Catégories</a></li>
+            <li><a href="#">Nouveautés</a></li>
+            <li><a href="#">Populaires</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Support</h3>
+          <ul>
+            <li><a href="#">Centre d'aide</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Communauté</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Légal</h3>
+          <ul>
+            <li><a href="#">Conditions d'utilisation</a></li>
+            <li><a href="#">Politique de confidentialité</a></li>
+            <li><a href="#">Cookies</a></li>
+            <li><a href="#">Licences</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Marketplace. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Connexion</h2>
+        <button class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form>
+        <div class="form-group">
+          <label for="loginEmail" class="form-label">Email</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="votre@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword" class="form-label">Mot de passe</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="Votre mot de passe" required>
+        </div>
+        <div class="form-footer">
+          <a href="#">Mot de passe oublié ?</a>
+          <button type="submit" class="btn btn-primary">Se connecter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Inscription</h2>
+        <button class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <form>
+        <div class="form-group">
+          <label for="registerName" class="form-label">Nom</label>
+          <input type="text" id="registerName" class="form-input" placeholder="Votre nom" required>
+        </div>
+        <div class="form-group">
+          <label for="registerEmail" class="form-label">Email</label>
+          <input type="email" id="registerEmail" class="form-input" placeholder="votre@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPassword" class="form-label">Mot de passe</label>
+          <input type="password" id="registerPassword" class="form-input" placeholder="Votre mot de passe" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPasswordConfirm" class="form-label">Confirmer le mot de passe</label>
+          <input type="password" id="registerPasswordConfirm" class="form-input" placeholder="Confirmez votre mot de passe" required>
+        </div>
+        <div class="form-footer">
+          <button type="submit" class="btn btn-primary">S'inscrire</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    
+    // Check if dark mode is stored in localStorage
+    if (localStorage.getItem('darkMode') === 'true') {
+      body.classList.add('dark-mode');
+      themeToggle.textContent = '☀️';
+    }
+    
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-mode');
+      
+      if (body.classList.contains('dark-mode')) {
+        localStorage.setItem('darkMode', 'true');
+        themeToggle.textContent = '☀️';
+      } else {
+        localStorage.setItem('darkMode', 'false');
+        themeToggle.textContent = '🌙';
+      }
+    });
+    
+    // Mobile menu toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const navContainer = document.getElementById('navContainer');
+    const navClose = document.getElementById('navClose');
+    
+    menuToggle.addEventListener('click', () => {
+      navContainer.classList.add('active');
+    });
+    
+    navClose.addEventListener('click', () => {
+      navContainer.classList.remove('active');
+    });
+    
+    // Modal functionality
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const loginModal = document.getElementById('loginModal');
+    const registerModal = document.getElementById('registerModal');
+    const closeButtons = document.querySelectorAll('[data-close-modal]');
+    
+    loginBtn.addEventListener('click', () => {
+      loginModal.classList.add('active');
+    });
+    
+    registerBtn.addEventListener('click', () => {
+      registerModal.classList.add('active');
+    });
+    
+    closeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        loginModal.classList.remove('active');
+        registerModal.classList.remove('active');
+      });
+    });
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target === loginModal) {
+        loginModal.classList.remove('active');
+      }
+      if (e.target === registerModal) {
+        registerModal.classList.remove('active');
+      }
+    });
+  </script>
