@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login as authLogin, register as authRegister, logout as authLogout, getCurrentUser, logError } from '../services/auth.service';
+import { login as authLogin, register as authRegister, logout as authLogout, getCurrentUser } from '../services/auth.service';
+import { logError } from '../services/api';
 
 // Création du contexte
 const AuthContext = createContext();

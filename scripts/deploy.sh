@@ -203,6 +203,7 @@ EOL
                            tar -xzf ~/frontend-source.tar.gz -C $REMOTE_DIR/frontend-source && \
                            cd $REMOTE_DIR/frontend-source && \
                            npm install && \
+                           npm install framer-motion@10.16.4 && \
                            npm run build && \
                            rm -rf $REMOTE_DIR/frontend/* && \
                            mkdir -p $REMOTE_DIR/frontend && \
@@ -245,7 +246,8 @@ deploy_backend() {
                            tar -xzf ~/backend-build.tar.gz -C $REMOTE_DIR/backend && \
                            cd $REMOTE_DIR/backend && \
                            npm install --production && \
-                           pm2 restart marketplace-api || pm2 start server.js --name marketplace-api && \
+                           sudo npm install -g pm2 || true && \
+                           pm2 restart marketplace-api || pm2 start server.js --name marketplace-api || sudo pm2 start server.js --name marketplace-api && \
                            rm ~/backend-build.tar.gz"
   check_status "Backend déployé avec succès" "Erreur lors du déploiement du backend"
   

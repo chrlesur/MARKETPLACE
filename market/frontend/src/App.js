@@ -14,6 +14,14 @@ import SkeletonLoader from './components/common/SkeletonLoader';
 import ScrollToTop from './components/common/ScrollToTop';
 import BackToTop from './components/common/BackToTop';
 
+// Routes d'administration
+import AdminRoutes from './components/admin/AdminRoutes';
+
+// Contextes
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './contexts/ToastContext';
+
 // Chargement paresseux des pages pour améliorer les performances
 const HomePage = lazy(() => import('./pages/HomePage'));
 const AppsPage = lazy(() => import('./pages/AppsPage'));
@@ -22,14 +30,6 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-
-// Routes d'administration
-import AdminRoutes from './components/admin/AdminRoutes';
-
-// Contextes
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { ToastProvider } from './contexts/ToastContext';
 
 // Composant pour les routes protégées
 const PrivateRoute = ({ children }) => {

@@ -23,7 +23,7 @@ import UserList from '../components/admin/UserList';
 import UserForm from '../components/admin/UserForm';
 import DeleteConfirmDialog from '../components/admin/DeleteConfirmDialog';
 
-// Importer le service des utilisateurs
+// Importer les services
 import { getUsers, updateUser, deleteUser } from '../services/users.service';
 import { register } from '../services/auth.service';
 
