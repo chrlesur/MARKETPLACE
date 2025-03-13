@@ -258,6 +258,7 @@ deploy_backend() {
 # Fonction pour déployer une application spécifique
 deploy_app() {
   APP_NAME=$1
+  COMPONENT=$2  # 'frontend', 'backend', ou vide pour les deux
   
   if [ -z "$APP_NAME" ]; then
     error "Nom de l'application non spécifié"
@@ -274,60 +275,131 @@ deploy_app() {
   info "Déploiement de l'application $APP_NAME..."
   
   # Déployer le frontend de l'application
-  if [ -d "$APP_DIR/public" ]; then
-    info "Déploiement du frontend de l'application $APP_NAME..."
-    
-    # Créer un tarball du frontend de l'application
-    info "Création de l'archive du frontend de l'application..."
-    cd "$APP_DIR/public" || exit
-    tar -czf "$PROJECT_ROOT/app-frontend-build.tar.gz" .
-    check_status "Archive du frontend de l'application créée avec succès" "Erreur lors de la création de l'archive du frontend de l'application"
-    cd "$PROJECT_ROOT"
-    
-    # Transférer le tarball sur le serveur
-    info "Transfert du frontend de l'application vers le serveur..."
-    scp -P "$PORT" app-frontend-build.tar.gz "$SERVER:~/"
-    check_status "Frontend de l'application transféré avec succès" "Erreur lors du transfert du frontend de l'application"
-    
-    # Déployer le frontend de l'application sur le serveur
-    info "Déploiement du frontend de l'application sur le serveur..."
-    ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME/public && \
-                             tar -xzf ~/app-frontend-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME/public && \
-                             rm ~/app-frontend-build.tar.gz"
-    check_status "Frontend de l'application déployé avec succès" "Erreur lors du déploiement du frontend de l'application"
-    
-    # Nettoyer
-    rm app-frontend-build.tar.gz
+  if [ -z "$COMPONENT" ] || [ "$COMPONENT" = "frontend" ]; then
+    if [ -d "$APP_DIR/public" ]; then
+      info "Déploiement du frontend de l'application $APP_NAME..."
+      
+      # Créer un tarball du frontend de l'application
+      info "Création de l'archive du frontend de l'application..."
+      cd "$APP_DIR" || exit
+      tar -czf "$PROJECT_ROOT/app-frontend-build.tar.gz" --exclude="node_modules" public
+      check_status "Archive du frontend de l'application créée avec succès" "Erreur lors de la création de l'archive du frontend de l'application"
+      cd "$PROJECT_ROOT"
+      
+      # Transférer le tarball sur le serveur
+      info "Transfert du frontend de l'application vers le serveur..."
+      scp -P "$PORT" app-frontend-build.tar.gz "$SERVER:~/"
+      check_status "Frontend de l'application transféré avec succès" "Erreur lors du transfert du frontend de l'application"
+      
+      # Déployer le frontend de l'application sur le serveur
+      info "Déploiement du frontend de l'application sur le serveur..."
+      ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME && \
+                               rm -rf $REMOTE_DIR/apps/$APP_NAME/public && \
+                               mkdir -p $REMOTE_DIR/apps/$APP_NAME/public && \
+                               tar -xzf ~/app-frontend-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME --strip-components=1 && \
+                               sudo chmod -R 755 $REMOTE_DIR/apps/$APP_NAME/public && \
+                               sudo chown -R market:market $REMOTE_DIR/apps/$APP_NAME/public && \
+                               sudo restorecon -R $REMOTE_DIR/apps/$APP_NAME/public && \
+                               rm ~/app-frontend-build.tar.gz"
+      check_status "Frontend de l'application déployé avec succès" "Erreur lors du déploiement du frontend de l'application"
+      
+      # Nettoyer
+      rm app-frontend-build.tar.gz
+    else
+      warning "Aucun frontend trouvé pour l'application $APP_NAME"
+    fi
   fi
   
   # Déployer le backend de l'application
-  if [ -d "$APP_DIR/backend" ]; then
-    info "Déploiement du backend de l'application $APP_NAME..."
+  if [ -z "$COMPONENT" ] || [ "$COMPONENT" = "backend" ]; then
+    # Vérifier si l'application a un serveur.js à la racine ou un dossier backend
+    if [ -f "$APP_DIR/server.js" ]; then
+      info "Déploiement du serveur de l'application $APP_NAME..."
+      
+      # Créer un tarball du serveur de l'application
+      info "Création de l'archive du serveur de l'application..."
+      cd "$APP_DIR" || exit
+      tar --exclude="node_modules" --exclude=".env" --exclude="public/uploads" -czf "$PROJECT_ROOT/app-server-build.tar.gz" .
+      check_status "Archive du serveur de l'application créée avec succès" "Erreur lors de la création de l'archive du serveur de l'application"
+      cd "$PROJECT_ROOT"
+      
+      # Transférer le tarball sur le serveur
+      info "Transfert du serveur de l'application vers le serveur..."
+      scp -P "$PORT" app-server-build.tar.gz "$SERVER:~/"
+      check_status "Serveur de l'application transféré avec succès" "Erreur lors du transfert du serveur de l'application"
+      
+      # Déployer le serveur de l'application sur le serveur
+      info "Déploiement du serveur de l'application sur le serveur..."
+      ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME && \
+                               tar -xzf ~/app-server-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME && \
+                               cd $REMOTE_DIR/apps/$APP_NAME && \
+                               npm install --production && \
+                               pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
+                               rm ~/app-server-build.tar.gz"
+      check_status "Serveur de l'application déployé avec succès" "Erreur lors du déploiement du serveur de l'application"
+      
+      # Nettoyer
+      rm app-server-build.tar.gz
+    elif [ -d "$APP_DIR/backend" ]; then
+      info "Déploiement du backend de l'application $APP_NAME..."
+      
+      # Créer un tarball du backend de l'application
+      info "Création de l'archive du backend de l'application..."
+      cd "$APP_DIR/backend" || exit
+      tar --exclude="node_modules" --exclude=".env" --exclude="uploads" -czf "$PROJECT_ROOT/app-backend-build.tar.gz" .
+      check_status "Archive du backend de l'application créée avec succès" "Erreur lors de la création de l'archive du backend de l'application"
+      cd "$PROJECT_ROOT"
+      
+      # Transférer le tarball sur le serveur
+      info "Transfert du backend de l'application vers le serveur..."
+      scp -P "$PORT" app-backend-build.tar.gz "$SERVER:~/"
+      check_status "Backend de l'application transféré avec succès" "Erreur lors du transfert du backend de l'application"
+      
+      # Déployer le backend de l'application sur le serveur
+      info "Déploiement du backend de l'application sur le serveur..."
+      ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME/backend && \
+                               tar -xzf ~/app-backend-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME/backend && \
+                               cd $REMOTE_DIR/apps/$APP_NAME/backend && \
+                               npm install --production && \
+                               pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
+                               rm ~/app-backend-build.tar.gz"
+      check_status "Backend de l'application déployé avec succès" "Erreur lors du déploiement du backend de l'application"
+      
+      # Nettoyer
+      rm app-backend-build.tar.gz
+    else
+      warning "Aucun backend trouvé pour l'application $APP_NAME"
+    fi
+  fi
+  
+  # Déployer les modules partagés si nécessaire
+  if [ -d "$PROJECT_ROOT/apps/shared" ] && { [ -z "$COMPONENT" ] || [ "$COMPONENT" = "shared" ]; }; then
+    info "Déploiement des modules partagés..."
     
-    # Créer un tarball du backend de l'application
-    info "Création de l'archive du backend de l'application..."
-    cd "$APP_DIR/backend" || exit
-    tar --exclude="node_modules" --exclude=".env" -czf "$PROJECT_ROOT/app-backend-build.tar.gz" .
-    check_status "Archive du backend de l'application créée avec succès" "Erreur lors de la création de l'archive du backend de l'application"
+    # Créer un tarball des modules partagés
+    info "Création de l'archive des modules partagés..."
+    cd "$PROJECT_ROOT/apps" || exit
+    tar -czf "$PROJECT_ROOT/shared-modules.tar.gz" shared
+    check_status "Archive des modules partagés créée avec succès" "Erreur lors de la création de l'archive des modules partagés"
     cd "$PROJECT_ROOT"
     
     # Transférer le tarball sur le serveur
-    info "Transfert du backend de l'application vers le serveur..."
-    scp -P "$PORT" app-backend-build.tar.gz "$SERVER:~/"
-    check_status "Backend de l'application transféré avec succès" "Erreur lors du transfert du backend de l'application"
+    info "Transfert des modules partagés vers le serveur..."
+    scp -P "$PORT" shared-modules.tar.gz "$SERVER:~/"
+    check_status "Modules partagés transférés avec succès" "Erreur lors du transfert des modules partagés"
     
-    # Déployer le backend de l'application sur le serveur
-    info "Déploiement du backend de l'application sur le serveur..."
-    ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME/backend && \
-                             tar -xzf ~/app-backend-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME/backend && \
-                             cd $REMOTE_DIR/apps/$APP_NAME/backend && \
-                             npm install --production && \
-                             pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
-                             rm ~/app-backend-build.tar.gz"
-    check_status "Backend de l'application déployé avec succès" "Erreur lors du déploiement du backend de l'application"
+    # Déployer les modules partagés sur le serveur
+    info "Déploiement des modules partagés sur le serveur..."
+    ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps && \
+                             tar -xzf ~/shared-modules.tar.gz -C $REMOTE_DIR/apps && \
+                             sudo chmod -R 755 $REMOTE_DIR/apps/shared && \
+                             sudo chown -R market:market $REMOTE_DIR/apps/shared && \
+                             sudo restorecon -R $REMOTE_DIR/apps/shared && \
+                             rm ~/shared-modules.tar.gz"
+    check_status "Modules partagés déployés avec succès" "Erreur lors du déploiement des modules partagés"
     
     # Nettoyer
-    rm app-backend-build.tar.gz
+    rm shared-modules.tar.gz
   fi
   
   success "Déploiement de l'application $APP_NAME terminé"
@@ -392,12 +464,77 @@ if [ $# -gt 0 ]; then
         error "Nom de l'application non spécifié"
         exit 1
       fi
-      deploy_app "$2"
+      # Vérifier s'il y a un troisième argument pour le composant
+      if [ -n "$3" ]; then
+        deploy_app "$2" "$3"
+      else
+        deploy_app "$2"
+      fi
+      ;;
+    shared)
+      # Déployer uniquement les modules partagés
+      if [ -d "$PROJECT_ROOT/apps/shared" ]; then
+        info "Déploiement des modules partagés..."
+        
+        # Créer un tarball des modules partagés
+        info "Création de l'archive des modules partagés..."
+        cd "$PROJECT_ROOT/apps" || exit
+        tar -czf "$PROJECT_ROOT/shared-modules.tar.gz" shared
+        check_status "Archive des modules partagés créée avec succès" "Erreur lors de la création de l'archive des modules partagés"
+        cd "$PROJECT_ROOT"
+        
+        # Transférer le tarball sur le serveur
+        info "Transfert des modules partagés vers le serveur..."
+        scp -P "$PORT" shared-modules.tar.gz "$SERVER:~/"
+        check_status "Modules partagés transférés avec succès" "Erreur lors du transfert des modules partagés"
+        
+        # Déployer les modules partagés sur le serveur
+        info "Déploiement des modules partagés sur le serveur..."
+        ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps && \
+                                 tar -xzf ~/shared-modules.tar.gz -C $REMOTE_DIR/apps && \
+                                 sudo chmod -R 755 $REMOTE_DIR/apps/shared && \
+                                 sudo chown -R market:market $REMOTE_DIR/apps/shared && \
+                                 sudo restorecon -R $REMOTE_DIR/apps/shared && \
+                                 rm ~/shared-modules.tar.gz"
+        check_status "Modules partagés déployés avec succès" "Erreur lors du déploiement des modules partagés"
+        
+        # Nettoyer
+        rm shared-modules.tar.gz
+        
+        success "Déploiement des modules partagés terminé"
+      else
+        error "Le dossier des modules partagés n'existe pas"
+        exit 1
+      fi
+      ;;
+    nginx)
+      # Déployer uniquement la configuration Nginx
+      if [ -d "$PROJECT_ROOT/config/nginx" ]; then
+        info "Déploiement de la configuration Nginx..."
+        
+        # Transférer la configuration Nginx
+        info "Transfert de la configuration Nginx..."
+        scp -P "$PORT" "$PROJECT_ROOT/config/nginx/marketplace.conf" "$SERVER:~/"
+        check_status "Configuration Nginx transférée avec succès" "Erreur lors du transfert de la configuration Nginx"
+        
+        # Installer la configuration Nginx sur le serveur
+        info "Installation de la configuration Nginx sur le serveur..."
+        ssh -p "$PORT" "$SERVER" "sudo cp ~/marketplace.conf /etc/nginx/conf.d/market.quantum-dream.net.conf && \
+                                 sudo nginx -t && \
+                                 sudo systemctl restart nginx && \
+                                 rm ~/marketplace.conf"
+        check_status "Configuration Nginx installée avec succès" "Erreur lors de l'installation de la configuration Nginx"
+        
+        success "Déploiement de la configuration Nginx terminé"
+      else
+        error "Le dossier de configuration Nginx n'existe pas"
+        exit 1
+      fi
       ;;
     all) deploy_all ;;
     *)
       error "Argument invalide: $1"
-      echo "Usage: $0 [frontend|backend|app <app_name>|all]"
+      echo "Usage: $0 [frontend|backend|app <app_name> [frontend|backend|shared]|shared|nginx|all]"
       exit 1
       ;;
   esac

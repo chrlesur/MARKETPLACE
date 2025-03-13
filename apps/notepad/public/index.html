@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotePad - Marketplace</title>
+  
+  <!-- Polices Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  
+  <!-- Styles partagés de la Marketplace -->
+  <link rel="stylesheet" href="/shared/styles.css">
+  
+  <!-- Styles spécifiques à NotePad -->
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Icône de l'application -->
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <!-- Conteneur pour la barre de navigation -->
+  <div id="navbar-container"></div>
+  
+  <div class="app-container">
+    <div class="container">
+      <div class="notepad-layout">
+        <!-- Sidebar avec la liste des notes -->
+        <div class="notepad-sidebar">
+          <div class="sidebar-header">
+            <h2>Mes Notes</h2>
+            <button id="new-note-btn" class="btn btn-primary">
+              <span class="btn-icon">+</span> Nouvelle note
+            </button>
+          </div>
+          
+          <div class="search-container">
+            <input type="text" id="search-notes" class="form-control" placeholder="Rechercher...">
+          </div>
+          
+          <div class="notes-list" id="notes-list">
+            <!-- Les notes seront ajoutées ici dynamiquement -->
+            <div class="empty-state" id="empty-state">
+              <p>Aucune note pour le moment</p>
+              <button id="create-first-note-btn" class="btn btn-outline-primary">Créer ma première note</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Éditeur de notes -->
+        <div class="notepad-editor">
+          <div class="editor-header">
+            <input type="text" id="note-title" class="form-control note-title" placeholder="Titre de la note" disabled>
+            <div class="editor-actions">
+              <button id="save-note-btn" class="btn btn-primary" disabled>Enregistrer</button>
+              <button id="delete-note-btn" class="btn btn-outline-primary" disabled>Supprimer</button>
+            </div>
+          </div>
+          
+          <div class="editor-toolbar" id="editor-toolbar">
+            <button data-format="bold" class="toolbar-btn" title="Gras">B</button>
+            <button data-format="italic" class="toolbar-btn" title="Italique">I</button>
+            <button data-format="underline" class="toolbar-btn" title="Souligné">U</button>
+            <span class="toolbar-separator"></span>
+            <button data-format="h1" class="toolbar-btn" title="Titre 1">H1</button>
+            <button data-format="h2" class="toolbar-btn" title="Titre 2">H2</button>
+            <button data-format="h3" class="toolbar-btn" title="Titre 3">H3</button>
+            <span class="toolbar-separator"></span>
+            <button data-format="ul" class="toolbar-btn" title="Liste à puces">•</button>
+            <button data-format="ol" class="toolbar-btn" title="Liste numérotée">1.</button>
+            <span class="toolbar-separator"></span>
+            <button data-format="link" class="toolbar-btn" title="Lien">🔗</button>
+            <button data-format="image" class="toolbar-btn" title="Image">🖼️</button>
+            <span class="toolbar-separator"></span>
+            <button data-format="code" class="toolbar-btn" title="Code">{ }</button>
+            <button data-format="quote" class="toolbar-btn" title="Citation">❝</button>
+          </div>
+          
+          <div class="editor-content">
+            <div id="note-content" class="note-content" contenteditable="false" placeholder="Commencez à écrire votre note ici..."></div>
+          </div>
+          
+          <div class="editor-footer">
+            <div class="note-meta">
+              <span id="note-date">Dernière modification : --/--/---- --:--</span>
+              <span id="note-word-count">0 mots</span>
+            </div>
+            <div class="note-tags">
+              <input type="text" id="note-tags" class="form-control" placeholder="Ajouter des tags (séparés par des virgules)" disabled>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modals -->
+  <div class="modal" id="delete-confirm-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Confirmer la suppression</h3>
+        <button class="modal-close" id="delete-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir supprimer cette note ? Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary" id="delete-cancel-btn">Annuler</button>
+        <button class="btn btn-primary" id="delete-confirm-btn">Supprimer</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="link-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Ajouter un lien</h3>
+        <button class="modal-close" id="link-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="link-text">Texte du lien</label>
+          <input type="text" id="link-text" class="form-control" placeholder="Texte à afficher">
+        </div>
+        <div class="form-group">
+          <label for="link-url">URL</label>
+          <input type="text" id="link-url" class="form-control" placeholder="https://exemple.com">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary" id="link-cancel-btn">Annuler</button>
+        <button class="btn btn-primary" id="link-confirm-btn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="image-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Ajouter une image</h3>
+        <button class="modal-close" id="image-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="image-alt">Texte alternatif</label>
+          <input type="text" id="image-alt" class="form-control" placeholder="Description de l'image">
+        </div>
+        <div class="form-group">
+          <label for="image-url">URL de l'image</label>
+          <input type="text" id="image-url" class="form-control" placeholder="https://exemple.com/image.jpg">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary" id="image-cancel-btn">Annuler</button>
+        <button class="btn btn-primary" id="image-confirm-btn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts partagés de la Marketplace -->
+  <script type="module" src="/shared/auth.js"></script>
+  <script type="module" src="/shared/notifications.js"></script>
+  <script type="module" src="/shared/navbar.js"></script>
+  
+  <!-- Scripts spécifiques à NotePad -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

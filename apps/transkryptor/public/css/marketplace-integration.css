@@ -1,0 +1,225 @@
+/**
+ * Styles d'intégration de Transkryptor avec la Marketplace
+ * Ce fichier étend les styles partagés pour les adapter à Transkryptor
+ */
+
+/* Réinitialisation des styles spécifiques à Transkryptor qui pourraient entrer en conflit */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Conteneur principal */
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* Colonnes */
+.column {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Blocs */
+.block {
+  background-color: var(--bg-primary);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.block h2 {
+  color: var(--primary);
+  font-size: var(--font-size-xl);
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.block h2 button {
+  margin-left: var(--spacing-sm);
+}
+
+/* Formulaires */
+form div {
+  margin-bottom: var(--spacing-md);
+}
+
+label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="file"],
+textarea,
+select {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--text-light);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-md);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Boutons */
+button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+button:hover {
+  background-color: var(--primary-dark);
+}
+
+.button-group {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+/* Titre principal */
+h1 {
+  color: var(--primary);
+  text-align: center;
+  margin: var(--spacing-xl) 0;
+  font-size: var(--font-size-3xl);
+}
+
+/* Zone de débogage */
+#debug {
+  font-family: 'Roboto Mono', monospace;
+  font-size: var(--font-size-sm);
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+}
+
+/* Transcription et analyse */
+#rawTranscription,
+#analyzeResult,
+#synthesisResult {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Barres de progression */
+.progress-container {
+  width: 100%;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--border-radius-full);
+  margin-bottom: var(--spacing-md);
+  position: relative;
+  height: 20px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: var(--border-radius-full);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+  }
+  
+  .column {
+    width: 100%;
+  }
+}
+
+/* Intégration avec la marketplace */
+#navbar-container {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Conteneur d'application */
+.app-container {
+  padding-top: var(--spacing-lg);
+}
+
+/* Styles pour les faits extraits */
+.fact {
+  background-color: var(--bg-primary);
+  border-left: 4px solid var(--primary);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+}
+
+.fact-header {
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--primary);
+}
+
+.fact-content {
+  color: var(--text-primary);
+}
+
+/* Styles pour les questions générées */
+.question {
+  background-color: var(--bg-primary);
+  border-left: 4px solid var(--secondary);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+}
+
+.question-text {
+  font-weight: 600;
+  color: var(--secondary);
+}
