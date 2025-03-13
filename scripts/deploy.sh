@@ -7,9 +7,15 @@
 SERVER="market@market.quantum-dream.net"
 PORT="4022"
 REMOTE_DIR="/var/www/marketplace"
-FRONTEND_DIR="market/frontend"
-BACKEND_DIR="market/backend"
-APPS_DIR="apps"
+
+# Déterminer le chemin absolu du répertoire du script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Définir les chemins relatifs au répertoire racine du projet
+FRONTEND_DIR="$PROJECT_ROOT/market/frontend"
+BACKEND_DIR="$PROJECT_ROOT/market/backend"
+APPS_DIR="$PROJECT_ROOT/apps"
 
 # Couleurs pour les messages
 RED='\033[0;31m'
@@ -52,34 +58,167 @@ check_status() {
 deploy_frontend() {
   info "Déploiement du frontend..."
   
-  # Construire le frontend
-  info "Construction du frontend..."
-  cd "$FRONTEND_DIR" || exit
-  npm install
-  npm run build
-  check_status "Frontend construit avec succès" "Erreur lors de la construction du frontend"
-  
-  # Créer un tarball du build
+  # Créer un tarball des fichiers source
   info "Création de l'archive du frontend..."
-  cd build || exit
-  tar -czf ../../frontend-build.tar.gz .
+  cd "$FRONTEND_DIR" || exit
+  # Exclure node_modules et build pour réduire la taille
+  tar --exclude="node_modules" --exclude="build" -czf "$PROJECT_ROOT/frontend-source.tar.gz" .
   check_status "Archive du frontend créée avec succès" "Erreur lors de la création de l'archive du frontend"
-  cd ../..
+  cd "$PROJECT_ROOT"
   
-  # Transférer le tarball sur le serveur
-  info "Transfert du frontend vers le serveur..."
-  scp -P "$PORT" frontend-build.tar.gz "$SERVER:~/"
+  # Créer la configuration Nginx
+  info "Création de la configuration Nginx..."
+  cat > "$PROJECT_ROOT/nginx-marketplace.conf" << 'EOL'
+# Serveur HTTPS pour le nom de domaine
+server {
+    server_name market.quantum-dream.net;
+    root /var/www/marketplace/frontend;
+    index index.html index.htm;
+
+    # Configuration pour Let's Encrypt
+    location ~ /.well-known/acme-challenge {
+        allow all;
+        root /var/www/market.quantum-dream.net/html;
+    }
+
+    # Configuration pour la marketplace
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Configuration pour l'interface d'administration
+    location /admin {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Configuration pour l'application Transkryptor
+    location /transkryptor {
+        alias /var/www/marketplace/apps/transkryptor/public;
+        try_files $uri $uri/ /transkryptor/index.html;
+    }
+
+    # Configuration pour les API
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Configuration pour l'endpoint test-keys
+    location /test-keys {
+        # Autoriser explicitement les méthodes POST
+        limit_except GET POST OPTIONS {
+            deny all;
+        }
+
+        proxy_pass http://localhost:3001/test-keys;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+
+        # Autoriser les méthodes POST
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET POST OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT User-Agent X-Requested-With If-Modified-Since Cache-Control Content-Type Range';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+        if ($request_method = 'POST') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET POST OPTIONS';
+            add_header 'Access-Control-Allow-Headers' 'DNT User-Agent X-Requested-With If-Modified-Since Cache-Control Content-Type Range';
+            add_header 'Access-Control-Expose-Headers' 'Content-Length Content-Range';
+        }
+    }
+
+    # Configuration de sécurité
+    server_tokens off;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'";
+
+    # Configuration pour les fichiers statiques
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 30d;
+        add_header Cache-Control "public no-transform";
+    }
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/market.quantum-dream.net/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/market.quantum-dream.net/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}
+
+# Redirection HTTP vers HTTPS pour le nom de domaine
+server {
+    listen 80;
+    listen [::]:80;
+    server_name market.quantum-dream.net;
+
+    return 301 https://$host$request_uri;
+}
+
+# Serveur par défaut pour l'adresse IP
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    root /var/www/marketplace/frontend;
+    index index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Configuration de sécurité
+    server_tokens off;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-XSS-Protection "1; mode=block";
+}
+EOL
+  check_status "Configuration Nginx créée avec succès" "Erreur lors de la création de la configuration Nginx"
+  
+  # Transférer les fichiers sur le serveur
+  info "Transfert des fichiers vers le serveur..."
+  scp -P "$PORT" frontend-source.tar.gz "$SERVER:~/"
   check_status "Frontend transféré avec succès" "Erreur lors du transfert du frontend"
   
-  # Déployer le frontend sur le serveur
-  info "Déploiement du frontend sur le serveur..."
-  ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/frontend && \
-                           tar -xzf ~/frontend-build.tar.gz -C $REMOTE_DIR/frontend && \
-                           rm ~/frontend-build.tar.gz"
-  check_status "Frontend déployé avec succès" "Erreur lors du déploiement du frontend"
+  scp -P "$PORT" nginx-marketplace.conf "$SERVER:~/"
+  check_status "Configuration Nginx transférée avec succès" "Erreur lors du transfert de la configuration Nginx"
+  
+  # Déployer et construire le frontend sur le serveur
+  info "Déploiement et construction du frontend sur le serveur..."
+  ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/frontend-source && \
+                           tar -xzf ~/frontend-source.tar.gz -C $REMOTE_DIR/frontend-source && \
+                           cd $REMOTE_DIR/frontend-source && \
+                           npm install && \
+                           npm run build && \
+                           rm -rf $REMOTE_DIR/frontend/* && \
+                           mkdir -p $REMOTE_DIR/frontend && \
+                           cp -r build/* $REMOTE_DIR/frontend/ && \
+                           sudo chmod -R 755 $REMOTE_DIR/frontend && \
+                           sudo chown -R market:market $REMOTE_DIR/frontend && \
+                           sudo restorecon -R $REMOTE_DIR/frontend && \
+                           sudo cp ~/nginx-marketplace.conf /etc/nginx/conf.d/market.quantum-dream.net.conf && \
+                           sudo nginx -t && \
+                           sudo systemctl restart nginx && \
+                           rm ~/frontend-source.tar.gz ~/nginx-marketplace.conf"
+  check_status "Frontend déployé et construit avec succès" "Erreur lors du déploiement ou de la construction du frontend"
   
   # Nettoyer
-  rm frontend-build.tar.gz
+  rm frontend-source.tar.gz
+  rm -f nginx-marketplace.conf
   
   success "Déploiement du frontend terminé"
 }
@@ -91,9 +230,9 @@ deploy_backend() {
   # Créer un tarball du backend
   info "Création de l'archive du backend..."
   cd "$BACKEND_DIR" || exit
-  tar --exclude="node_modules" --exclude=".env" -czf ../../backend-build.tar.gz .
+  tar --exclude="node_modules" --exclude=".env" -czf "$PROJECT_ROOT/backend-build.tar.gz" .
   check_status "Archive du backend créée avec succès" "Erreur lors de la création de l'archive du backend"
-  cd ../..
+  cd "$PROJECT_ROOT"
   
   # Transférer le tarball sur le serveur
   info "Transfert du backend vers le serveur..."
@@ -141,9 +280,9 @@ deploy_app() {
     # Créer un tarball du frontend de l'application
     info "Création de l'archive du frontend de l'application..."
     cd "$APP_DIR/public" || exit
-    tar -czf ../../../app-frontend-build.tar.gz .
+    tar -czf "$PROJECT_ROOT/app-frontend-build.tar.gz" .
     check_status "Archive du frontend de l'application créée avec succès" "Erreur lors de la création de l'archive du frontend de l'application"
-    cd ../../..
+    cd "$PROJECT_ROOT"
     
     # Transférer le tarball sur le serveur
     info "Transfert du frontend de l'application vers le serveur..."
@@ -168,9 +307,9 @@ deploy_app() {
     # Créer un tarball du backend de l'application
     info "Création de l'archive du backend de l'application..."
     cd "$APP_DIR/backend" || exit
-    tar --exclude="node_modules" --exclude=".env" -czf ../../../app-backend-build.tar.gz .
+    tar --exclude="node_modules" --exclude=".env" -czf "$PROJECT_ROOT/app-backend-build.tar.gz" .
     check_status "Archive du backend de l'application créée avec succès" "Erreur lors de la création de l'archive du backend de l'application"
-    cd ../../..
+    cd "$PROJECT_ROOT"
     
     # Transférer le tarball sur le serveur
     info "Transfert du backend de l'application vers le serveur..."

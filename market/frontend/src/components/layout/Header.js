@@ -120,6 +120,13 @@ const Header = () => {
               </ListItemIcon>
               <ListItemText primary="Profil" />
             </ListItem>
+            {/* Simuler un utilisateur administrateur */}
+            <ListItem button onClick={() => handleNavigation('/admin')}>
+              <ListItemIcon>
+                <AppsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Administration" />
+            </ListItem>
             <ListItem button onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon />
@@ -264,6 +271,13 @@ const Header = () => {
                       <AccountCircle fontSize="small" />
                     </ListItemIcon>
                     <Typography textAlign="center">Profil</Typography>
+                  </MenuItem>
+                  {/* Simuler un utilisateur administrateur */}
+                  <MenuItem onClick={() => handleNavigation('/admin')}>
+                    <ListItemIcon>
+                      <AppsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <Typography textAlign="center">Administration</Typography>
                   </MenuItem>
                   <MenuItem onClick={handleLogout}>
                     <ListItemIcon>
