@@ -6,7 +6,7 @@ import {
   Rating,
   Button
 } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { Download as DownloadIcon, Launch as LaunchIcon } from '@mui/icons-material';
 
 /**
  * Composant pour afficher les informations principales d'une application
@@ -55,17 +55,18 @@ const AppInfo = ({ app, handleDownload }) => {
         {app.description?.short || app.description?.full || app.description || 'Aucune description disponible'}
       </Typography>
       
-      {/* Bouton de téléchargement/achat */}
+      {/* Bouton de téléchargement/achat/accès */}
       <Button
         variant="contained"
         color="primary"
         size="large"
         fullWidth
-        startIcon={<DownloadIcon />}
+        startIcon={app.name === 'NotePad' ? <LaunchIcon /> : <DownloadIcon />}
         onClick={handleDownload}
         sx={{ mb: 3 }}
       >
-        {app.pricing?.type === 'free' ? 'Télécharger gratuitement' : 
+        {app.name === 'NotePad' ? 'Accéder à l\'application' :
+         app.pricing?.type === 'free' ? 'Télécharger gratuitement' : 
          app.pricing?.type === 'paid' ? `Acheter (${app.pricing.price || 0} ${app.pricing.currency || '€'})` : 
          app.pricing?.type === 'subscription' ? `S'abonner (${app.pricing.price || 0} ${app.pricing.currency || '€'}/mois)` : 
          'Télécharger'}
