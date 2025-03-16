@@ -115,6 +115,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Fonction pour vérifier si l'utilisateur est connecté
+  const isLoggedIn = () => {
+    return currentUser !== null;
+  };
+
   // Valeur du contexte
   const value = {
     currentUser,
@@ -122,7 +127,8 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     register,
-    logout
+    logout,
+    isLoggedIn
   };
 
   return (
