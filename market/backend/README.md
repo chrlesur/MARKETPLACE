@@ -56,10 +56,12 @@ PORT=3001
 NODE_ENV=development
 JWT_SECRET=votre_secret_jwt
 JWT_EXPIRES_IN=7d
-MONGODB_URI=votre_uri_mongodb
+MONGODB_URI=mongodb://localhost:27017/marketplace
 API_URL=http://localhost:3001
 FRONTEND_URL=http://localhost:3000
 ```
+
+> **Note :** Si `MONGODB_URI` n'est pas défini, l'application utilisera par défaut `mongodb://localhost:27017/marketplace`.
 
 ## API Endpoints
 
@@ -92,13 +94,30 @@ FRONTEND_URL=http://localhost:3000
 - `PUT /api/users/:id` - Mettre à jour un utilisateur (admin ou propriétaire)
 - `DELETE /api/users/:id` - Supprimer un utilisateur (admin ou propriétaire)
 
+## Connexion à MongoDB
+
+L'application se connecte automatiquement à MongoDB au démarrage. La configuration de connexion se trouve dans le fichier `config/db.js`. Les fonctionnalités principales incluent :
+
+- Connexion automatique à la base de données spécifiée par `MONGODB_URI`
+- Création automatique des collections requises si elles n'existent pas
+- Gestion robuste des erreurs et reconnexion automatique
+- Journalisation détaillée pour faciliter le débogage
+
+En cas de problème de connexion, vérifiez que :
+- MongoDB est installé et en cours d'exécution
+- L'URI de connexion est correct
+- Les permissions sont correctement configurées
+
 ## Déploiement
 
 Le déploiement est géré par le script `scripts/deploy.sh` à la racine du projet. Ce script permet de déployer le backend sur le serveur distant.
 
 ```bash
-# Depuis la racine du projet
-./scripts/deploy.sh
+# Déployer tout le projet
+./scripts/deploy.sh all
+
+# Déployer uniquement le backend
+./scripts/deploy.sh backend
 ```
 
 ## Bonnes pratiques
