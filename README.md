@@ -113,6 +113,25 @@ marketplace/
 
 Transkryptor est une application de transcription audio et d'analyse de contenu utilisant l'intelligence artificielle. Elle permet de convertir des fichiers audio en texte et d'analyser ce texte pour en extraire des informations pertinentes.
 
+#### Fonctionnalités principales
+- Transcription audio vers texte via l'API OpenAI Whisper
+- Analyse de texte avec Claude d'Anthropic
+- Génération de synthèses et d'extractions de faits
+- Interface utilisateur intuitive et responsive
+
+#### Intégration avec la marketplace
+L'application Transkryptor a été optimisée pour s'intégrer parfaitement à la marketplace :
+- Accès direct via l'URL `/transkryptor/`
+- Interface utilisateur adaptée au style de la marketplace
+- Gestion optimisée des fichiers audio volumineux
+- Barres de progression améliorées pour le suivi des traitements
+
+#### Améliorations récentes
+- Correction de l'URL d'accès pour permettre une redirection directe depuis la marketplace
+- Optimisation de la route `/transcribe` pour un traitement plus efficace des fichiers audio
+- Amélioration de l'interface utilisateur (largeur adaptative, boutons centrés, barres de progression)
+- Installation automatique des dépendances requises lors du déploiement
+
 Pour plus d'informations, consultez le [README de Transkryptor](apps/transkryptor/README.md).
 
 ## Déploiement
