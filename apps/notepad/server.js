@@ -17,6 +17,12 @@ const app = express();
 // Configurer CORS
 app.use(cors());
 
+// Middleware de logging pour déboguer les requêtes
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Configurer le middleware pour parser le JSON
 app.use(express.json());
 

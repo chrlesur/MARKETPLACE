@@ -144,7 +144,7 @@ server {
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options SAMEORIGIN;
     add_header X-XSS-Protection "1; mode=block";
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'";
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://via.placeholder.com https://*.cloudinary.com; connect-src 'self' ws: wss: https://api.quantum-dream.net; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; media-src 'self'; worker-src 'self' blob:; manifest-src 'self'";
 
     # Configuration pour les fichiers statiques
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
@@ -231,7 +231,7 @@ deploy_backend() {
   # Créer un tarball du backend
   info "Création de l'archive du backend..."
   cd "$BACKEND_DIR" || exit
-  tar --exclude="node_modules" --exclude=".env" -czf "$PROJECT_ROOT/backend-build.tar.gz" .
+  tar --exclude="node_modules" -czf "$PROJECT_ROOT/backend-build.tar.gz" .
   check_status "Archive du backend créée avec succès" "Erreur lors de la création de l'archive du backend"
   cd "$PROJECT_ROOT"
   

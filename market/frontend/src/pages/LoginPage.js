@@ -24,7 +24,17 @@ const LoginPage = () => {
   const { login } = useAuth();
   
   // Récupérer l'URL de redirection si elle existe
-  const from = location.state?.from || '/';
+  // Vérifier d'abord le paramètre redirect dans l'URL, puis location.state.from, sinon utiliser '/'
+  const searchParams = new URLSearchParams(location.search);
+  const redirectParam = searchParams.get('redirect');
+  const from = redirectParam || location.state?.from || '/';
+  
+  // Logs pour déboguer les redirections
+  console.log('LoginPage - Paramètres de redirection:', {
+    redirectParam,
+    locationState: location.state,
+    finalRedirection: from
+  });
   
   // États pour le formulaire
   const [email, setEmail] = useState('');
@@ -50,6 +60,7 @@ const LoginPage = () => {
       await login(email, password);
       
       // Redirection après connexion réussie
+      console.log('Redirection après connexion réussie vers:', from);
       navigate(from, { replace: true });
       
     } catch (err) {

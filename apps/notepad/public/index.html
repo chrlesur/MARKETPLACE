@@ -158,6 +158,35 @@
     </div>
   </div>
   
+  <!-- Script de débogage pour l'authentification -->
+  <script>
+    // Script de débogage amélioré pour l'authentification
+    (function() {
+      // Informations sur la page actuelle
+      console.log('Page NotePad chargée', {
+        url: window.location.href,
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hash: window.location.hash,
+        hasToken: !!localStorage.getItem('token')
+      });
+      
+      // Ajouter un gestionnaire d'erreurs global
+      window.addEventListener('error', function(event) {
+        console.error('Erreur globale capturée:', event.error);
+        // Empêcher la propagation de l'erreur pour éviter les boucles infinies
+        event.preventDefault();
+      });
+      
+      // Ajouter un gestionnaire de promesses non gérées
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Promesse rejetée non gérée:', event.reason);
+        // Empêcher la propagation de l'erreur pour éviter les boucles infinies
+        event.preventDefault();
+      });
+    })();
+  </script>
+  
   <!-- Scripts partagés de la Marketplace -->
   <script type="module" src="/shared/auth.js"></script>
   <script type="module" src="/shared/notifications.js"></script>

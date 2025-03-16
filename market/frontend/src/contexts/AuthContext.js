@@ -61,8 +61,8 @@ export const AuthProvider = ({ children }) => {
       // Mettre à jour l'état de l'utilisateur
       setCurrentUser(user);
       
-      // Rediriger vers la page d'accueil
-      navigate('/');
+      // Ne pas rediriger ici, laisser LoginPage gérer la redirection
+      console.log('Authentification réussie dans AuthContext, utilisateur:', user);
       
       return true;
     } catch (err) {
