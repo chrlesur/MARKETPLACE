@@ -66,12 +66,29 @@ gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc
 EOL
 success "Référentiel MongoDB ajouté avec succès"
 
-# Étape 2 : Installer MongoDB
-info "Installation de MongoDB..."
+# Étape 2 : Installer MongoDB et MongoDB Shell
+info "Installation de MongoDB et MongoDB Shell..."
 dnf clean all
 dnf makecache
-dnf install -y mongodb-org
-success "MongoDB installé avec succès"
+dnf install -y mongodb-org mongodb-mongosh
+success "MongoDB et MongoDB Shell installés avec succès"
+
+# Vérifier que MongoDB Shell est installé
+if command -v mongosh &> /dev/null; then
+  success "MongoDB Shell (mongosh) est installé correctement"
+  mongosh --version
+else
+  error "MongoDB Shell (mongosh) n'est pas installé correctement"
+  info "Tentative d'installation séparée de MongoDB Shell..."
+  dnf install -y mongodb-mongosh
+  
+  if command -v mongosh &> /dev/null; then
+    success "MongoDB Shell (mongosh) installé avec succès"
+  else
+    error "Échec de l'installation de MongoDB Shell"
+    exit 1
+  fi
+fi
 
 # Étape 3 : Configurer MongoDB
 info "Configuration de MongoDB..."

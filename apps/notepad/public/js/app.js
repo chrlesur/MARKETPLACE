@@ -7,10 +7,15 @@
  * @version 1.0.0
  */
 
-// Importer les modules partagés
-import { initAuth, getUserInfo } from '/shared/auth.js';
-import { showSuccess, showError, showInfo } from '/shared/notifications.js';
-import { createNavbar } from '/shared/navbar.js';
+// Importer le module d'intégration avec la Marketplace
+import { 
+  initializeAuth, 
+  getCurrentUser, 
+  createMarketplaceNavbar,
+  showSuccessNotification as showSuccess,
+  showErrorNotification as showError,
+  showInfoNotification as showInfo
+} from './marketplace-integration.js';
 
 // Modèle de données
 class NoteModel {
@@ -22,7 +27,7 @@ class NoteModel {
   
   // Charger les notes depuis le localStorage
   loadNotes() {
-    const user = getUserInfo();
+    const user = getCurrentUser();
     if (!user) return [];
     
     const userStorageKey = `${this.storageKey}_${user.id}`;
@@ -42,7 +47,7 @@ class NoteModel {
   
   // Sauvegarder les notes dans le localStorage
   saveNotes() {
-    const user = getUserInfo();
+    const user = getCurrentUser();
     if (!user) return;
     
     const userStorageKey = `${this.storageKey}_${user.id}`;
@@ -302,12 +307,11 @@ class NoteController {
   // Initialiser l'application
   async init() {
     // Initialiser l'authentification
-    initAuth({
+    initializeAuth({
       requireAuth: true,
       onSuccess: (user) => {
         // Créer la barre de navigation
-        createNavbar({
-          appName: 'NotePad',
+        createMarketplaceNavbar({
           menuItems: [
             { 
               label: 'Exporter toutes les notes', 

@@ -126,3 +126,25 @@ Le déploiement est géré par le script `scripts/deploy.sh` à la racine du pro
 - Utiliser les middleware pour la validation et l'authentification
 - Documenter les endpoints API
 - Gérer correctement les erreurs
+
+## Gestion des applications
+
+La Marketplace inclut un système complet de gestion des applications qui permet d'initialiser la base de données, d'ajouter des applications et de les gérer.
+
+### Scripts disponibles
+
+- `scripts/manage-apps.sh` : Script principal pour la gestion des applications
+- `docs/mongodb/init-mongodb.js` : Script d'initialisation de MongoDB
+- `docs/mongodb/add-app.js` : Script pour ajouter ou mettre à jour une application
+- `docs/mongodb/app-templates.js` : Script pour générer des templates d'applications
+- `docs/mongodb/manage-apps.js` : Script pour gérer les applications existantes
+
+### Documentation
+
+Pour plus d'informations sur la gestion des applications, consultez le document [docs/mongodb/app-management.md](../docs/mongodb/app-management.md) qui explique en détail :
+
+- Le processus d'initialisation de MongoDB
+- Les différentes méthodes pour ajouter des applications
+- La gestion des applications existantes
+- Des exemples concrets avec NotePad et Transkryptor
+- Les procédures de dépannage
