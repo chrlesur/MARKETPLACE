@@ -124,8 +124,41 @@ Une documentation complète a été créée dans le fichier `docs/mongodb/app-ma
 
 Le fichier `market/backend/README.md` a également été mis à jour pour référencer cette nouvelle documentation.
 
+## Améliorations et corrections récentes
+
+### 1. Mise en place d'un système de paramètres persistants
+
+Un système complet de gestion des paramètres de l'application a été implémenté :
+
+#### Backend
+- Création du modèle `Setting.js` pour stocker les paramètres dans MongoDB
+- Développement du contrôleur `settings.controller.js` avec les opérations CRUD
+- Création des routes API dans `settings.routes.js` avec sécurisation par authentification
+- Enregistrement des routes dans le fichier principal `server.js`
+
+#### Frontend
+- Création d'un service `settings.service.js` qui communique avec l'API backend
+- Modification de la page `AdminSettingsPage.js` pour utiliser ce service au lieu du localStorage
+- Ajout d'un indicateur de chargement pendant le chargement des paramètres
+- Implémentation des fonctions de sauvegarde et de réinitialisation des paramètres
+
+Les paramètres sont maintenant stockés dans la base de données MongoDB et sont persistants entre les sessions. Lorsque l'administrateur modifie les paramètres dans la page d'administration, les modifications sont envoyées au serveur et stockées de manière permanente.
+
+### 2. Amélioration de la sécurité
+
+- Modification du composant `AppInfo.js` pour vérifier si l'utilisateur est connecté avant d'afficher le bouton "Accéder à l'application"
+- Ajout d'un message d'alerte et d'un bouton de connexion pour les utilisateurs non connectés
+
+### 3. Corrections de bugs et optimisations
+
+- Correction d'une erreur dans les routes d'authentification qui causait des erreurs 502 Bad Gateway
+- Suppression des options dépréciées `useNewUrlParser` et `useUnifiedTopology` du fichier `config/db.js`
+- Nettoyage des logs d'erreur pour supprimer les avertissements liés aux options dépréciées
+
 ## Conclusion
 
 Le système de gestion des applications implémenté répond aux exigences définies dans le plan d'action de l'étape 7. Il permet d'initialiser facilement la base de données MongoDB et de gérer les applications de la Marketplace Web de manière conviviale, que ce soit via une interface interactive ou en ligne de commande.
 
 Les scripts sont robustes, bien documentés et gèrent correctement les erreurs. La documentation fournie permet aux utilisateurs de comprendre facilement comment utiliser le système, même sans connaissances techniques avancées.
+
+Les améliorations récentes ont renforcé la stabilité, la sécurité et la convivialité de la plateforme, notamment grâce à la mise en place d'un système de paramètres persistants et à la correction de bugs importants.
