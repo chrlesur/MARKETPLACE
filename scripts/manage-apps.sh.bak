@@ -314,10 +314,6 @@ add_app_interactive() {
   read -p "Description courte [$current_short_desc]: " app_short_desc
   app_short_desc=${app_short_desc:-$current_short_desc}
   
-  current_full_desc=$(echo "$app_data" | grep -o '"full": *"[^"]*"' | cut -d'"' -f4)
-  read -p "Description complète [$current_full_desc]: " app_full_desc
-  app_full_desc=${app_full_desc:-$current_full_desc}
-  
   echo "Catégories disponibles : productivite, outils"
   read -p "Catégorie [$current_category]: " app_category
   app_category=${app_category:-$current_category}
@@ -361,7 +357,6 @@ add_app_interactive() {
     jq_cmd="python3 -c \"import json, sys; data = json.load(sys.stdin); "
     jq_cmd+="data['name'] = '$app_name_input'; "
     jq_cmd+="data['description']['short'] = '$app_short_desc'; "
-    jq_cmd+="data['description']['full'] = '$app_full_desc'; "
     jq_cmd+="data['category'] = '$app_category'; "
     jq_cmd+="data['pricing']['type'] = '$app_pricing'; "
     
@@ -403,7 +398,6 @@ add_app_interactive() {
   if [ "$jq_cmd" = "jq" ]; then
     cat "$temp_json" | jq ".name = \"$app_name_input\" | 
       .description.short = \"$app_short_desc\" | 
-      .description.full = \"$app_full_desc\" | 
       .category = \"$app_category\" | 
       .pricing.type = \"$app_pricing\" | 
       .url = \"$app_url\" | 

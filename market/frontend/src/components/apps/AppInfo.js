@@ -69,7 +69,7 @@ const AppInfo = ({ app, handleDownload }) => {
       </Typography>
       
       {/* Vérifier si l'utilisateur est connecté */}
-      {!isLoggedIn() && app.name === 'NotePad' ? (
+      {!isLoggedIn() && app.pricing?.type === 'free' ? (
         <>
           <Alert severity="info" sx={{ mb: 2 }}>
             Vous devez être connecté pour accéder à cette application.
@@ -92,12 +92,11 @@ const AppInfo = ({ app, handleDownload }) => {
           color="primary"
           size="large"
           fullWidth
-          startIcon={app.name === 'NotePad' ? <LaunchIcon /> : <DownloadIcon />}
+          startIcon={app.pricing?.type === 'free' ? <LaunchIcon /> : <DownloadIcon />}
           onClick={handleDownload}
           sx={{ mb: 3 }}
         >
-          {app.name === 'NotePad' ? 'Accéder à l\'application' :
-           app.pricing?.type === 'free' ? 'Télécharger gratuitement' : 
+          {app.pricing?.type === 'free' ? 'Accéder à l\'application' :
            app.pricing?.type === 'paid' ? `Acheter (${app.pricing.price || 0} ${app.pricing.currency || '€'})` : 
            app.pricing?.type === 'subscription' ? `S'abonner (${app.pricing.price || 0} ${app.pricing.currency || '€'}/mois)` : 
            'Télécharger'}
