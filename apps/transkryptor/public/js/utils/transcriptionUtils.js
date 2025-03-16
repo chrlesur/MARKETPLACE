@@ -7,16 +7,26 @@ export async function transcribeChunk(chunkBlob, apiKey, chunkIndex, batchIndex,
     const formData = new FormData();
     formData.append("file", chunkBlob, `chunk_${chunkIndex}.wav`);
     formData.append("model", "whisper-1");
+    formData.append("openaiKey", apiKey); // Envoyer la clé API au serveur
 
     try {
         log(`Traitement du morceau ${chunkIndex + 1} commencé`);
-        const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+        
+        // Déterminer si nous sommes dans la marketplace ou en mode standalone
+        const isInMarketplace = window.location.pathname.includes('/transkryptor');
+        
+        // Construire l'URL de l'endpoint en fonction du contexte
+        const apiPrefix = isInMarketplace ? '/transkryptor/api' : '';
+        const API_URL = window.location.origin;
+        const transcriptionEndpoint = `${API_URL}${apiPrefix}/transcribe`;
+        
+        const response = await axios.post(transcriptionEndpoint, formData, {
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "multipart/form-data"
             },
             timeout: timeout,
         });
+        
         log(`Traitement du morceau ${chunkIndex + 1} terminé`);
         return response.data.text;
     } catch (error) {

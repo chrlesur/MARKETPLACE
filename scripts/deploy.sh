@@ -54,7 +54,7 @@ check_status() {
   fi
 }
 
-# Fonction pour déployer le frontend
+# Fonction pour déployer le frontendv
 deploy_frontend() {
   info "Déploiement du frontend..."
   
@@ -130,6 +130,7 @@ deploy_backend() {
                            tar -xzf ~/backend-build.tar.gz -C $REMOTE_DIR/backend && \
                            cd $REMOTE_DIR/backend && \
                            npm install --production && \
+                           npm audit fix && \
                            sudo npm install -g pm2 || true && \
                            pm2 restart marketplace-api || pm2 start server.js --name marketplace-api || sudo pm2 start server.js --name marketplace-api && \
                            rm ~/backend-build.tar.gz"
@@ -216,12 +217,26 @@ deploy_app() {
       
       # Déployer le serveur de l'application sur le serveur
       info "Déploiement du serveur de l'application sur le serveur..."
-      ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME && \
-                               tar -xzf ~/app-server-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME && \
-                               cd $REMOTE_DIR/apps/$APP_NAME && \
-                               npm install --production && \
-                               pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
-                               rm ~/app-server-build.tar.gz"
+      if [ "$APP_NAME" = "transkryptor" ]; then
+        # Pour Transkryptor, installer également form-data et multer
+        ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME && \
+                                 tar -xzf ~/app-server-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME && \
+                                 cd $REMOTE_DIR/apps/$APP_NAME && \
+                                 npm install --production && \
+                                 npm install form-data multer && \
+                                 npm audit fix && \
+                                 pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
+                                 rm ~/app-server-build.tar.gz"
+      else
+        # Pour les autres applications
+        ssh -p "$PORT" "$SERVER" "mkdir -p $REMOTE_DIR/apps/$APP_NAME && \
+                                 tar -xzf ~/app-server-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME && \
+                                 cd $REMOTE_DIR/apps/$APP_NAME && \
+                                 npm install --production && \
+                                 npm audit fix && \
+                                 pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
+                                 rm ~/app-server-build.tar.gz"
+      fi
       check_status "Serveur de l'application déployé avec succès" "Erreur lors du déploiement du serveur de l'application"
       
       # Nettoyer
@@ -247,6 +262,7 @@ deploy_app() {
                                tar -xzf ~/app-backend-build.tar.gz -C $REMOTE_DIR/apps/$APP_NAME/backend && \
                                cd $REMOTE_DIR/apps/$APP_NAME/backend && \
                                npm install --production && \
+                               npm audit fix && \
                                pm2 restart $APP_NAME-api || pm2 start server.js --name $APP_NAME-api && \
                                rm ~/app-backend-build.tar.gz"
       check_status "Backend de l'application déployé avec succès" "Erreur lors du déploiement du backend de l'application"

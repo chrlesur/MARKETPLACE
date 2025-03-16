@@ -1,0 +1,218 @@
+/**
+ * Styles d'override pour l'intégration de Transkryptor avec la marketplace
+ * Ces styles corrigent les problèmes de compatibilité avec la marketplace
+ */
+
+/* Correction pour le body */
+body {
+  overflow: auto !important; /* Permettre le défilement */
+  height: auto !important; /* Hauteur automatique */
+  padding: 0 !important; /* Pas de padding */
+  margin: 0 !important; /* Pas de marge */
+}
+
+/* Correction pour les champs de saisie password */
+input[type="password"] {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--text-light) !important;
+  padding: var(--spacing-sm) var(--spacing-md) !important;
+  border-radius: var(--border-radius-md) !important;
+  font-size: var(--font-size-md) !important;
+  width: 100% !important;
+  display: block !important;
+  margin: 8px 0 !important;
+}
+
+/* Correction pour les champs de sélection de fichier */
+input[type="file"] {
+  color: #000000 !important; /* Texte noir pour un contraste maximal */
+}
+
+/* Correction pour le texte qui affiche le nom du fichier sélectionné */
+.file-name, 
+.file-label, 
+.file-info, 
+.selected-file,
+input[type="file"]::file-selector-button {
+  color: #000000 !important; /* Texte noir pour un contraste maximal */
+}
+
+/* Correction pour le conteneur principal */
+.main-container {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+  padding: 20px !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Correction pour les blocs */
+.block {
+  margin-bottom: 20px !important;
+  overflow: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Correction pour les cartes et conteneurs */
+.card, .container, .section, .panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Correction pour les boutons */
+button, .button, .btn {
+  padding: 10px 20px !important;
+  margin: 5px !important;
+  min-width: 120px !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1.5 !important;
+  height: 40px !important;
+}
+
+/* Groupe de boutons */
+.button-group, .btn-group, .actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin: 15px 0 !important;
+  width: 100% !important;
+}
+
+/* Assurer que le texte est centré dans tous les éléments interactifs */
+input[type="button"], 
+input[type="submit"], 
+input[type="reset"],
+a.button,
+a.btn,
+label.button,
+label.btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
+  height: 40px !important;
+}
+
+/* Correction pour les zones de défilement */
+#rawTranscription, #analyzeResult, #synthesisResult, #debug {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  color: #000000 !important; /* Texte noir pour un contraste maximal */
+  font-family: 'Roboto Mono', monospace !important;
+  line-height: 1.5 !important;
+}
+
+/* Redéfinition complète des barres de progression */
+.progress-container {
+  width: 100% !important;
+  height: 24px !important;
+  background-color: #e9ecef !important;
+  border-radius: 4px !important;
+  margin: 10px 0 20px 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  display: block !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.progress-bar {
+  height: 100% !important;
+  background-color: #6c7ae0 !important;
+  border-radius: 4px !important;
+  transition: width 0.3s ease !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  display: block !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.progress-text {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #000000 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7) !important;
+  z-index: 10 !important;
+  width: auto !important;
+  white-space: nowrap !important;
+}
+
+/* Styles spécifiques pour les différents types de progression */
+#globalProgress, #batchProgress {
+  width: 100% !important;
+  margin-bottom: 20px !important;
+  display: block !important;
+}
+
+#globalProgress .progress-container,
+#batchProgress .progress-container {
+  width: 100% !important;
+  height: 24px !important;
+  display: block !important;
+}
+
+#globalProgress .progress-bar,
+#batchProgress .progress-bar {
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Correction pour les éléments de progression spécifiques */
+.progress-wrapper, .progress-outer, .progress-inner {
+  width: 100% !important;
+  display: block !important;
+  position: relative !important;
+}
+
+/* Assurer que le texte de progression est visible */
+.progress-label, .progress-value, .progress-percentage {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  margin-bottom: 5px !important;
+  display: block !important;
+}
+
+/* Amélioration de la lisibilité des logs */
+#debug {
+  color: #000000 !important; /* Texte noir pour un contraste maximal */
+  font-family: 'Roboto Mono', monospace !important;
+  font-size: var(--font-size-sm) !important;
+  white-space: pre-wrap !important;
+}
+
+/* Amélioration de la lisibilité des contenus textuels */
+#rawTranscription, #analyzeResult, #synthesisResult {
+  color: #000000 !important; /* Texte noir pour un contraste maximal */
+  font-size: var(--font-size-sm) !important;
+  line-height: 1.6 !important;
+  white-space: pre-wrap !important;
+}
+
+/* Ajout d'un titre h1 caché pour éviter l'erreur JavaScript */
+h1.hidden-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

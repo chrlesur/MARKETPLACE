@@ -14,9 +14,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
 
+// Middleware pour gérer les fichiers multipart/form-data
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max file size
+});
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
+// Route pour tester les clés API
 app.post('/test-keys', async (req, res) => {
     Logger.startSection('Test des clés API');
     const { openaiKey, anthropicKey } = req.body;
@@ -60,6 +68,7 @@ app.post('/test-keys', async (req, res) => {
     Logger.endSection('Test des clés API');
 });
 
+// Route pour l'analyse de texte
 app.post('/analyze', async (req, res) => {
     Logger.startSection('Analyse de texte');
     try {
@@ -135,6 +144,92 @@ app.post('/analyze', async (req, res) => {
     Logger.endSection('Analyse de texte');
 });
 
+// Nouvelle route pour la transcription audio - approche simplifiée
+app.post('/transcribe', upload.single('file'), async (req, res) => {
+    Logger.startSection('Transcription audio');
+    try {
+        // Récupérer la clé API et le modèle depuis le corps de la requête
+        const openaiKey = req.body.openaiKey;
+        const model = req.body.model || 'whisper-1';
+        
+        Logger.debug({
+            hasOpenaiKey: !!openaiKey,
+            model,
+            hasFile: !!req.file,
+            bodyKeys: Object.keys(req.body),
+            fileInfo: req.file ? {
+                originalname: req.file.originalname,
+                mimetype: req.file.mimetype,
+                size: req.file.size
+            } : null
+        }, 'Paramètres reçus pour la transcription');
+        
+        // Vérifier que la clé API est fournie
+        if (!openaiKey) {
+            Logger.error('Clé API OpenAI manquante');
+            return res.status(400).json({ error: 'Clé API OpenAI requise' });
+        }
+        
+        // Vérifier que le fichier est fourni
+        if (!req.file) {
+            Logger.error('Fichier audio manquant');
+            return res.status(400).json({ error: 'Fichier audio requis' });
+        }
+        
+        Logger.info(`Transcription du fichier ${req.file.originalname} commencée`);
+        
+        // Créer un FormData manuellement
+        const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2);
+        const headers = {
+            'Authorization': `Bearer ${openaiKey}`,
+            'Content-Type': `multipart/form-data; boundary=${boundary}`
+        };
+        
+        // Construire le corps de la requête manuellement
+        let body = '';
+        
+        // Ajouter le modèle
+        body += `--${boundary}\r\n`;
+        body += 'Content-Disposition: form-data; name="model"\r\n\r\n';
+        body += `${model}\r\n`;
+        
+        // Ajouter le fichier
+        body += `--${boundary}\r\n`;
+        body += `Content-Disposition: form-data; name="file"; filename="${req.file.originalname}"\r\n`;
+        body += `Content-Type: ${req.file.mimetype}\r\n\r\n`;
+        
+        // Convertir le corps en Buffer
+        const bodyStart = Buffer.from(body, 'utf8');
+        const bodyEnd = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
+        
+        // Concaténer les buffers
+        const requestBody = Buffer.concat([
+            bodyStart,
+            req.file.buffer,
+            bodyEnd
+        ]);
+        
+        // Appeler l'API OpenAI directement avec le buffer
+        const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', requestBody, {
+            headers: headers,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
+        });
+        
+        Logger.success('Transcription terminée avec succès');
+        res.json(response.data);
+    } catch (error) {
+        Logger.error('Erreur lors de la transcription', error);
+        
+        res.status(500).json({
+            error: error.message,
+            details: error.response?.data
+        });
+    }
+    Logger.endSection('Transcription audio');
+});
+
+// Route pour servir index.html
 app.get('/', (req, res) => {
     Logger.startSection('Servir index.html');
     const indexPath = path.join(__dirname, 'public', 'index.html');
