@@ -17,10 +17,6 @@ const connectDB = async () => {
     
     // Options de connexion
     const options = {
-      // Ces options ne sont plus nécessaires dans les versions récentes de Mongoose,
-      // mais nous les gardons pour la compatibilité avec les anciennes versions
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       // Ajout de timeouts pour éviter les blocages
       serverSelectionTimeoutMS: 5000, // Timeout de 5 secondes pour la sélection du serveur
       socketTimeoutMS: 45000, // Timeout de 45 secondes pour les opérations

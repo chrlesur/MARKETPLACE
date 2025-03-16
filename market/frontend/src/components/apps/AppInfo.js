@@ -4,9 +4,14 @@ import {
   Typography,
   Chip,
   Rating,
-  Button
+  Button,
+  Alert
 } from '@mui/material';
-import { Download as DownloadIcon, Launch as LaunchIcon } from '@mui/icons-material';
+import { Download as DownloadIcon, Launch as LaunchIcon, Login as LoginIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+
+// Import du contexte d'authentification
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * Composant pour afficher les informations principales d'une application
@@ -16,7 +21,15 @@ import { Download as DownloadIcon, Launch as LaunchIcon } from '@mui/icons-mater
  * @returns {JSX.Element} Composant AppInfo
  */
 const AppInfo = ({ app, handleDownload }) => {
+  const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
+  
   if (!app) return null;
+  
+  // Fonction pour rediriger vers la page de connexion
+  const handleLoginRedirect = () => {
+    navigate('/login');
+  };
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -55,22 +68,41 @@ const AppInfo = ({ app, handleDownload }) => {
         {app.description?.short || app.description?.full || app.description || 'Aucune description disponible'}
       </Typography>
       
-      {/* Bouton de téléchargement/achat/accès */}
-      <Button
-        variant="contained"
-        color="primary"
-        size="large"
-        fullWidth
-        startIcon={app.name === 'NotePad' ? <LaunchIcon /> : <DownloadIcon />}
-        onClick={handleDownload}
-        sx={{ mb: 3 }}
-      >
-        {app.name === 'NotePad' ? 'Accéder à l\'application' :
-         app.pricing?.type === 'free' ? 'Télécharger gratuitement' : 
-         app.pricing?.type === 'paid' ? `Acheter (${app.pricing.price || 0} ${app.pricing.currency || '€'})` : 
-         app.pricing?.type === 'subscription' ? `S'abonner (${app.pricing.price || 0} ${app.pricing.currency || '€'}/mois)` : 
-         'Télécharger'}
-      </Button>
+      {/* Vérifier si l'utilisateur est connecté */}
+      {!isLoggedIn() && app.name === 'NotePad' ? (
+        <>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Vous devez être connecté pour accéder à cette application.
+          </Alert>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            fullWidth
+            startIcon={<LoginIcon />}
+            onClick={handleLoginRedirect}
+            sx={{ mb: 3 }}
+          >
+            Se connecter
+          </Button>
+        </>
+      ) : (
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          fullWidth
+          startIcon={app.name === 'NotePad' ? <LaunchIcon /> : <DownloadIcon />}
+          onClick={handleDownload}
+          sx={{ mb: 3 }}
+        >
+          {app.name === 'NotePad' ? 'Accéder à l\'application' :
+           app.pricing?.type === 'free' ? 'Télécharger gratuitement' : 
+           app.pricing?.type === 'paid' ? `Acheter (${app.pricing.price || 0} ${app.pricing.currency || '€'})` : 
+           app.pricing?.type === 'subscription' ? `S'abonner (${app.pricing.price || 0} ${app.pricing.currency || '€'}/mois)` : 
+           'Télécharger'}
+        </Button>
+      )}
       
       {/* Informations supplémentaires */}
       <Box sx={{ mb: 2 }}>

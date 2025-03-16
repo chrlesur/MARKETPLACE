@@ -44,6 +44,7 @@ connectDB()
     app.use('/api/apps', require('./routes/apps.routes'));
     app.use('/api/categories', require('./routes/categories.routes'));
     app.use('/api/users', require('./routes/users.routes'));
+    app.use('/api/settings', require('./routes/settings.routes'));
 
     // Route de test pour vérifier que l'API fonctionne
     app.get('/api/test', (req, res) => {

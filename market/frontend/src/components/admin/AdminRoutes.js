@@ -10,6 +10,7 @@ import AdminAppsPage from '../../pages/AdminAppsPage';
 import AdminAppFormPage from '../../pages/AdminAppFormPage';
 import AdminCategoriesPage from '../../pages/AdminCategoriesPage';
 import AdminUsersPage from '../../pages/AdminUsersPage';
+import AdminSettingsPage from '../../pages/AdminSettingsPage';
 import NotFoundPage from '../../pages/NotFoundPage';
 
 // Contexte d'authentification
@@ -43,6 +44,7 @@ const AdminRoutes = () => {
         <Route path="/admin/apps/:id/edit" element={<AdminAppFormPage />} />
         <Route path="/admin/categories" element={<AdminCategoriesPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/settings" element={<AdminSettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AdminLayout>
