@@ -90,6 +90,8 @@ deploy_frontend() {
                            rm -rf $REMOTE_DIR/frontend/* && \
                            mkdir -p $REMOTE_DIR/frontend && \
                            cp -r build/* $REMOTE_DIR/frontend/ && \
+                           mkdir -p $REMOTE_DIR/frontend/static/images/avatar && \
+                           cp -r public/static/images/avatar/* $REMOTE_DIR/frontend/static/images/avatar/ && \
                            sudo chmod -R 755 $REMOTE_DIR/frontend && \
                            sudo chown -R market:market $REMOTE_DIR/frontend && \
                            sudo restorecon -R $REMOTE_DIR/frontend && \

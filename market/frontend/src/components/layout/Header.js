@@ -247,7 +247,7 @@ const Header = () => {
               <>
                 <Tooltip title="Ouvrir les paramètres">
                   <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                    <Avatar alt={currentUser.name} src="/static/images/avatar/2.jpg" />
+                    <Avatar alt={currentUser.name} src="/static/images/avatar/2.webp" />
                   </IconButton>
                 </Tooltip>
                 <Menu

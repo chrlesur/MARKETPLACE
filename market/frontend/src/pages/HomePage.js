@@ -330,7 +330,7 @@ const HomePage = () => {
               <Grid item xs={12} md={6}>
                 <Box
                   component="img"
-                  src="https://via.placeholder.com/600x400/ffffff33/ffffff?text=Marketplace"
+                  src="/static/images/ct.webp"
                   alt="Marketplace Hero"
                   sx={{
                     width: '100%',
